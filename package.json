@@ -1,0 +1,32 @@
+{
+  "name": "@leonardoraele/signals",
+  "version": "0.1.0",
+  "description": "Signal implementation with client-provided scheduler.",
+  "keywords": [
+    "signal",
+    "signals",
+    "computed",
+    "effect"
+  ],
+  "license": "MIT",
+  "author": "Leonardo Raele <leonardoraele@gmail.com>",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "run-s test:types test:unit",
+    "test:unit": "vitest src",
+    "test:types": "tsc --noEmit",
+    "build": "tsc",
+    "prebuild": "rimraf dist",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "signal-controller": "^0.3.0"
+  }
+}
