@@ -1,17 +1,15 @@
 {
   "name": "@leonardoraele/signals",
-  "version": "0.1.0",
   "description": "Signal implementation with client-provided scheduler.",
-  "keywords": [
-    "signal",
-    "signals",
-    "computed",
-    "effect"
-  ],
-  "license": "MIT",
   "author": "Leonardo Raele <leonardoraele@gmail.com>",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:leonardoraele/signals.git"
+  },
   "type": "module",
-  "main": "dist/index.js",
+  "exports": "./dist/index.js",
   "scripts": {
     "test": "run-s test:types test:unit",
     "test:unit": "vitest src",
@@ -28,5 +26,11 @@
   },
   "dependencies": {
     "signal-controller": "^0.3.0"
-  }
+  },
+  "keywords": [
+    "signal",
+    "signals",
+    "computed",
+    "effect"
+  ]
 }
