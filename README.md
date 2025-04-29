@@ -24,36 +24,36 @@ npm install @leonardoraele/signals
 
 A `State` is a wrapper over a value, and it emites events when the value changes.
 
-	```javascript
-	import { State } from '@leonardoraele/signals';
+```js
+import { State } from '@leonardoraele/signals';
 
-	const state = new State(1);
+const state = new State(1);
 
-	console.log(state.value); // 1
+console.log(state.value); // 1
 
-	state.events.on('change', (newValue, oldValue) => {
-		console.log({ newValue, oldValue });
-	});
+state.events.on('change', (newValue, oldValue) => {
+	console.log({ newValue, oldValue });
+});
 
-	state.value = 2; // { newValue: 2, oldValue: 1 }
-	```
+state.value = 2; // { newValue: 2, oldValue: 1 }
+```
 
 ### Computed States
 
 Create computed states by combining one or more other states. Computed states are automatically updated when their dependencies change. The function runs lazily, only when the `value` property is accessed.
 
-	```javascript
-	import { State, Computed } from '@leonardoraele/signals';
+```js
+import { State, Computed } from '@leonardoraele/signals';
 
-	const state = new State(2);
-	const computed = new Computed(() => state.value * 2);
+const state = new State(2);
+const computed = new Computed(() => state.value * 2);
 
-	console.log(computed.value); // 4
+console.log(computed.value); // 4
 
-	state.value = 3;
+state.value = 3;
 
-	console.log(computed.value); // 6
-	```
+console.log(computed.value); // 6
+```
 
 You can also create computed states that depend on other computed states.
 
