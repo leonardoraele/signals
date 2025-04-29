@@ -4,15 +4,15 @@ import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
-export function createObservedProxy<T extends object>(subject: T, { deep = true } = {}): T {
+export function makeReactive<T extends object>(subject: T, { deep = true } = {}): T {
 	if (deep) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
-			.filter(([_path, object]) => !isObservedProxy(object))
+			.filter(([_path, object]) => !isReactive(object))
 			.forEach(([path, object, owner]) => {
-				owner[path.at(-1)!] = createObservedProxy(object);
+				owner[path.at(-1)!] = makeReactive(object);
 			});
 	}
-	if (isObservedProxy(subject)) {
+	if (isReactive(subject)) {
 		return subject;
 	}
 	const sources = {} as { // TODO Does it makes sense to use `WeakMap` here?
@@ -48,7 +48,7 @@ export function createObservedProxy<T extends object>(subject: T, { deep = true 
 			if (deep) {
 				const value = descriptor.value ?? descriptor.get?.();
 				if (typeof value === 'object' && value !== null) {
-					Reflect.set(target, key, createObservedProxy(value, { deep }));
+					Reflect.set(target, key, makeReactive(value, { deep }));
 				}
 			}
 			return result;
@@ -94,7 +94,7 @@ export function createObservedProxy<T extends object>(subject: T, { deep = true 
 		},
 		set(target, key, newValue, receiver) {
 			if (deep && typeof newValue === 'object' && newValue !== null) {
-				newValue = createObservedProxy(newValue, { deep });
+				newValue = makeReactive(newValue, { deep });
 			}
 			notifyChange(key);
 			return Reflect.set(target, key, newValue, receiver);
@@ -106,11 +106,11 @@ export function createObservedProxy<T extends object>(subject: T, { deep = true 
 	});
 }
 
-export function isObservedProxy(subject: object): boolean {
+export function isReactive(subject: object): boolean {
 	return PROXY_ESCAPE_SYMBOL in subject;
 }
 
-export function unwrapObservedProxy<T extends object>(subject: T): T {
+export function unwrapReactive<T extends object>(subject: T): T {
 	return PROXY_ESCAPE_SYMBOL in subject
 		? subject[PROXY_ESCAPE_SYMBOL] as T
 		: subject;
