@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { State } from './state.js';
-import { ComputedState } from './computed-state.js';
+import { Computed } from './computed.js';
 import { Effect } from './effect.js';
 
 describe('state', () => {
@@ -16,8 +16,8 @@ describe('computed state', () => {
 	it('updates lazily, when dependencies change', () => {
 		const a = new State(2);
 		const b = new State(3);
-		const sum = new ComputedState(() => a.value + b.value);
-		const doubleSum = new ComputedState(() => sum.value * 2);
+		const sum = new Computed(() => a.value + b.value);
+		const doubleSum = new Computed(() => sum.value * 2);
 
 		expect(sum.dirty).toBe(true);
 		expect(sum.value).toBe(5);
@@ -45,13 +45,13 @@ describe('effect', () => {
 		const effect = new Effect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
-		effect.reevaluateIfNeeded();
+		effect.reevaluate();
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
 		state.value = 0;
 		expect(effect.dirty).toBe(true);
 		expect(state.value).toBe(0);
-		effect.reevaluateIfNeeded();
+		effect.reevaluate();
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
 	});

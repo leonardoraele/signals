@@ -2,7 +2,7 @@ import { SignalController } from 'signal-controller';
 import { SignalSource } from './signal-source.js';
 import { SignalSink } from './signal-sink.js';
 
-export class ComputedState<T = unknown> implements SignalSource<T>, SignalSink {
+export class Computed<T = unknown> implements SignalSource<T>, SignalSink {
 	constructor(
 		private readonly callbackfn: () => T,
 	) {}
@@ -19,7 +19,7 @@ export class ComputedState<T = unknown> implements SignalSource<T>, SignalSink {
 
 	get value(): T {
 		if (this.#dirty) {
-			this.forceReevaluation();
+			this.forceRerun();
 		}
 		SignalSource.notifyUsage(this);
 		return this.#value;
@@ -29,7 +29,7 @@ export class ComputedState<T = unknown> implements SignalSource<T>, SignalSink {
 		return this.#dirty;
 	}
 
-	forceReevaluation(): void {
+	forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
 		SignalSource.events.on('usage', { signal: controller.signal }, source => dependencies.add(source));
