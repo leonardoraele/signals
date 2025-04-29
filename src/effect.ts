@@ -11,10 +11,12 @@ export class Effect implements SignalSink {
 
 	constructor(
 		private readonly callbackfn: () => unknown,
-		{ signal = null as AbortSignal|null } = {}
+		{ signal = null as AbortSignal|null, lazy = false } = {}
 	) {
 		signal?.addEventListener('abort', () => this.dispose());
-		this.forceRerun();
+		if (!lazy) {
+			this.forceRerun();
+		}
 	}
 
 	#dirty = true;
