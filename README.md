@@ -1,5 +1,7 @@
 # Signals
 
+![NPM Version](https://img.shields.io/npm/v/%40leonardoraele%2Fsignals)
+
 My own implementation of JavaScript signals, with transparent effect scheduling.
 
 This is intended for apps not based on frontend frameworks that still want to use signals to track state dependencies.
