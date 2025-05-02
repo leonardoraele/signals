@@ -93,10 +93,10 @@ describe('reactive proxy', () => {
 		});
 	});
 
-	describe('deep option', () => {
-		it('should not observe nested objects when deep option is disabled', () => {
+	describe('shallow option', () => {
+		it('should not observe nested objects when shallow option is set', () => {
 			const obj = { a: { b: 2 } };
-			const proxy = makeReactive(obj, { deep: false });
+			const proxy = makeReactive(obj, { shallow: true });
 			const doubleAB = new Computed(() => proxy.a.b * 2);
 			expect(doubleAB.value).toBe(4);
 			expect(isReactive(proxy.a)).toBe(false);
@@ -105,9 +105,9 @@ describe('reactive proxy', () => {
 			expect(doubleAB.value).toBe(4);
 		});
 
-		it('should handle nested objects with deep option', () => {
+		it('should handle nested objects with shallow option', () => {
 			const obj = { a: { b: 2 } };
-			const proxy = makeReactive(obj, { deep: true });
+			const proxy = makeReactive(obj, { shallow: false });
 			const doubleAB = new Computed(() => proxy.a.b * 2);
 			expect(isReactive(proxy.a)).toBe(true);
 			expect(doubleAB.value).toBe(4);
@@ -116,9 +116,9 @@ describe('reactive proxy', () => {
 			expect(proxy.a.b).toBe(3);
 		});
 
-		it('should not make new properties reactive', () => {
+		it('should not make new properties reactive when shallow option is set', () => {
 			const obj = {} as { nested?: { a: number } };
-			const proxy = makeReactive(obj, { deep: false });
+			const proxy = makeReactive(obj, { shallow: true });
 			proxy.nested = { a: 1 };
 			expect(isReactive(proxy.nested)).toBe(false);
 		});

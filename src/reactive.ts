@@ -4,8 +4,8 @@ import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
-export function makeReactive<T extends object>(subject: T, { deep = true } = {}): T {
-	if (deep) {
+export function makeReactive<T extends object>(subject: T, { shallow = false } = {}): T {
+	if (!shallow) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
 			.filter(([_path, object]) => !isReactive(object))
 			.forEach(([path, object, owner]) => {
@@ -45,10 +45,10 @@ export function makeReactive<T extends object>(subject: T, { deep = true } = {})
 		defineProperty(target, key, descriptor) {
 			notifyChange(key);
 			const result = Reflect.defineProperty(target, key, descriptor);
-			if (deep) {
+			if (!shallow) {
 				const value = descriptor.value ?? descriptor.get?.();
 				if (typeof value === 'object' && value !== null) {
-					Reflect.set(target, key, makeReactive(value, { deep }));
+					Reflect.set(target, key, makeReactive(value, { shallow }));
 				}
 			}
 			return result;
@@ -93,8 +93,8 @@ export function makeReactive<T extends object>(subject: T, { deep = true } = {})
 			return Reflect.preventExtensions(target);
 		},
 		set(target, key, newValue, receiver) {
-			if (deep && typeof newValue === 'object' && newValue !== null) {
-				newValue = makeReactive(newValue, { deep });
+			if (!shallow && typeof newValue === 'object' && newValue !== null) {
+				newValue = makeReactive(newValue, { shallow });
 			}
 			notifyChange(key);
 			return Reflect.set(target, key, newValue, receiver);
