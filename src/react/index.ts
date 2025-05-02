@@ -1,23 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Computed } from '../computed.js';
 import { Effect } from '../effect.js';
 import { State } from '../state.js';
-
-function useManualRerender() {
-	const [, setCounter] = useState(0);
-	return useCallback(() => setCounter(counter => counter + 1), []);
-}
+import { useManualRerender } from './manual.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useSignalState<T>(value: T): State<T> {
-	const rerender = useManualRerender();
-	const signal = useMemo(() => new State(value), []);
-	useEffect(() => {
-		signal.events.on('change', rerender);
-		return () => signal.events.off('change', rerender);
+export function useSignalState<T>(...args: Parameters<typeof useState<T>>): State<T> {
+	const [state, setState] = useState<T>(...args);
+	return useMemo(() => {
+		const signal = new State<T>(state!);
+		signal.events.on('change', () => setState(signal.value));
+		return signal;
 	}, []);
-	return signal;
 }
 
 /**
@@ -42,7 +37,8 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): T {
 
 /**
  * Similar to `useEffect`, but also watches for signals that are used inside the callback function. The callback reruns
- * when any of the dependant signals change, even if the explicit array of dependencies don't change.
+ * when any of the dependant signals change, even if the explicit array of dependencies don't change. Different from
+ * `useEffect`, the callback is not run on every rerender by default, but only when the dependant signals change.
  */
 export function useSignalEffect(callbackfn: () => void, deps: any[] = []): void {
 	const effect = useMemo(() => new Effect(callbackfn, { lazy: true }), deps);

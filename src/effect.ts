@@ -70,5 +70,6 @@ export class Effect implements SignalSink {
 	dispose(): void {
 		this.#abortController?.abort();
 		this.#eventsController.clear();
+		// TODO this.#eventsController.destroy();
 	}
 }
