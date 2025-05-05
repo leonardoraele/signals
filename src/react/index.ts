@@ -41,11 +41,11 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): T {
  * `useEffect`, the callback is not run on every rerender by default, but only when the dependant signals change.
  */
 export function useSignalEffect(callbackfn: () => void, deps: any[] = []): void {
+	const rerender = useManualRerender();
 	const effect = useMemo(() => new Effect(callbackfn, { lazy: true }), deps);
 	useEffect(() => {
-		const controller = new AbortController();
-		effect.events.on('dirty', { signal: controller.signal }, () => effect.reevaluate());
-		effect.reevaluate();
-		return () => controller.abort();
+		effect.events.on('dirty', rerender);
+		return () => effect.events.off('dirty', rerender);
 	}, [effect]);
+	useEffect(() => void effect.reevaluate());
 }
