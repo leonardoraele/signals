@@ -6,11 +6,11 @@ import { useManualRerender } from './manual.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useSignalState<T>(...args: Parameters<typeof useState<T>>): State<T> {
-	const [state, setState] = useState<T>(...args);
+export function useSignalState<T>(initialValue: T|(() => T)): State<T> {
+	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const signal = new State<T>(state!);
-		signal.events.on('change', () => setState(signal.value));
+		const signal = new State<T>(state);
+		signal.events.on('change', newValue => setState(newValue));
 		return signal;
 	}, []);
 }
