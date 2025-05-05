@@ -38,20 +38,6 @@ describe('reactive proxy', () => {
 			expect(doubleB.dirty).toBe(false);
 		});
 
-		it('should observe arrays', () => {
-			const arr = [0, 1, 2, 3, 4];
-			const proxy = makeReactive(arr);
-			const sum = new Computed(() => proxy.reduce((acc, val) => acc + val, 0));
-			expect(sum.value).toBe(10);
-			expect(sum.dirty).toBe(false);
-			proxy.splice(1, 3, -1);
-			expect(sum.dirty).toBe(true);
-			expect(sum.value).toBe(3);
-			expect(proxy.length).toBe(3);
-			expect(proxy).toEqual([0, -1, 4]);
-		});
-
-
 		describe('new properties', () => {
 			it('should make new properties reactive', () => {
 				const obj = {} as { nested?: { a: number } };
@@ -111,6 +97,80 @@ describe('reactive proxy', () => {
 				expect(entries.value).toEqual([['a', 1], ['b', 2]]);
 				proxy.c = 3;
 				expect(entries.value).toEqual([['a', 1], ['b', 2], ['c', 3]]);
+			});
+		});
+
+		describe('reactive arrays', () => {
+			let arr: number[];
+			let proxy: number[];
+			let len: Computed<number>;
+			let set: Computed<Set<number>>;
+			let sum: Computed<number>;
+			let sec: Computed<number|undefined>;
+			let last: Computed<number|undefined>;
+
+			beforeEach(() => {
+				arr = [0, 1, 2, 3, 4];
+				proxy = makeReactive(arr);
+				len = new Computed(() => proxy.length);
+				set = new Computed(() => new Set(proxy));
+				sum = new Computed(() => proxy.reduce((acc, val) => acc + val, 0));
+				sec = new Computed(() => proxy[1]);
+				last = new Computed(() => proxy[proxy.length - 1]);
+			});
+
+			it('should compute the sum and set correctly', () => {
+				expect(len.value).toBe(5);
+				expect(sum.value).toBe(10);
+				expect(set.value).toEqual(new Set([0, 1, 2, 3, 4]));
+				expect(sec.value).toBe(1);
+				expect(last.value).toBe(4);
+				expect(len.dirty).toBe(false);
+				expect(sum.dirty).toBe(false);
+				expect(set.dirty).toBe(false);
+				expect(sec.dirty).toBe(false);
+				expect(last.dirty).toBe(false);
+			});
+
+			it('should react to push', () => {
+				proxy.push(3);
+				expect(proxy).toEqual([0, 1, 2, 3, 4, 3]);
+				expect(len.value).toBe(6);
+				expect(sum.value).toBe(13);
+				expect(set.value).toEqual(new Set([0, 1, 2, 3, 4, 3]));
+				expect(sec.value).toBe(1);
+				expect(last.value).toBe(3);
+			});
+
+			it('should react to splice', () => {
+				proxy.splice(1, 3, -1);
+				expect(proxy).toEqual([0, -1, 4]);
+				expect(sum.value).toBe(3);
+				expect(proxy.length).toBe(3);
+				expect(set.value).toEqual(new Set([0, -1, 4]));
+				expect(len.value).toBe(3);
+				expect(sec.value).toBe(-1);
+				expect(last.value).toBe(4);
+			});
+
+			it('should react to length being overriden', () => {
+				proxy.length = 0;
+				expect(proxy).toEqual([]);
+				expect(len.value).toBe(0);
+				expect(sum.value).toBe(0);
+				expect(set.value).toEqual(new Set());
+				expect(sec.value).toBe(undefined);
+				expect(last.value).toBe(undefined);
+			});
+
+			it('should react to being cleared', () => {
+				proxy.splice(0, proxy.length);
+				expect(proxy).toEqual([]);
+				expect(len.value).toBe(0);
+				expect(sum.value).toBe(0);
+				expect(set.value).toEqual(new Set());
+				expect(sec.value).toBe(undefined);
+				expect(last.value).toBe(undefined);
 			});
 		});
 	});
