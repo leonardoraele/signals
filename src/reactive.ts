@@ -25,6 +25,7 @@ export function makeReactive<T extends object>(subject: T, { shallow = false } =
 		const source = sources[key] ??= (() => {
 			const controller = new SignalController<{ change(): void; }>();
 			return {
+				_debug: key,
 				controller,
 				events: controller.signal,
 			};
@@ -32,7 +33,7 @@ export function makeReactive<T extends object>(subject: T, { shallow = false } =
 		SignalSource.notifyUsage(source);
 	};
 	const notifyChange = (key: string|symbol) => sources[key]?.controller.emit('change');;
-	const self = Symbol();
+	const self = Symbol('self');
 	return new Proxy(subject, {
 		apply(target: any, thisArg, argArray) {
 			notifyUsage(self);
@@ -44,6 +45,7 @@ export function makeReactive<T extends object>(subject: T, { shallow = false } =
 		},
 		defineProperty(target, key, descriptor) {
 			notifyChange(key);
+			notifyChange(self);
 			const result = Reflect.defineProperty(target, key, descriptor);
 			if (!shallow) {
 				const value = descriptor.value ?? descriptor.get?.();

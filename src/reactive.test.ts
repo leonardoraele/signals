@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { makeReactive, isReactive, unwrapReactive } from './reactive';
 import { Computed } from './computed';
 
@@ -60,6 +60,59 @@ describe('reactive proxy', () => {
 				expect(isReactive(proxy.nested)).toBe(true);
 			});
 		});
+
+		describe('property accessors', () => {
+			let obj: Record<string, number>;
+			let proxy: Record<string, number>;
+
+			beforeEach(() => {
+				obj = { a: 1, b: 2 } as Record<string, number>;
+				proxy = makeReactive(obj);
+			});
+
+			it('works with for..in loop', () => {
+				const entries = new Computed(() => function*() {
+					for (const key in proxy) {
+						yield [key, proxy[key]];
+					}
+				}().toArray());
+				expect(entries.value).toEqual([['a', 1], ['b', 2]]);
+				proxy.c = 3;
+				expect(entries.value).toEqual([['a', 1], ['b', 2], ['c', 3]]);
+			});
+
+			it('works with for..of loop', () => {
+				const values = new Computed(() => function*() {
+					for (const value of Object.values(proxy)) {
+						yield value;
+					}
+				}().toArray());
+				expect(values.value).toEqual([1, 2]);
+				proxy.c = 3;
+				expect(values.value).toEqual([1, 2, 3]);
+			});
+
+			it('works with Object.keys', () => {
+				const keys = new Computed(() => Object.keys(proxy));
+				expect(keys.value).toEqual(['a', 'b']);
+				proxy.c = 3;
+				expect(keys.value).toEqual(['a', 'b', 'c']);
+			});
+
+			it('works with Object.values', () => {
+				const values = new Computed(() => Object.values(proxy));
+				expect(values.value).toEqual([1, 2]);
+				proxy.c = 3;
+				expect(values.value).toEqual([1, 2, 3]);
+			});
+
+			it('works with Object.entries', () => {
+				const entries = new Computed(() => Object.entries(proxy));
+				expect(entries.value).toEqual([['a', 1], ['b', 2]]);
+				proxy.c = 3;
+				expect(entries.value).toEqual([['a', 1], ['b', 2], ['c', 3]]);
+			});
+		});
 	});
 
 	describe('isReactive', () => {
@@ -76,7 +129,7 @@ describe('reactive proxy', () => {
 			const obj = { a: 1 };
 			expect(isReactive(obj)).toBe(false);
 		});
-	})
+	});
 
 	describe('unwrapReactive', () => {
 		it('should unwrap reactive proxy', () => {
