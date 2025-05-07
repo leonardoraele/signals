@@ -117,3 +117,12 @@ export function unwrapReactive<T extends object>(subject: T): T {
 		? subject[PROXY_ESCAPE_SYMBOL] as T
 		: subject;
 }
+
+export function unmakeReactive<T extends object>(subject: T): T {
+	searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
+		.filter(([_path, object]) => !isReactive(object))
+		.forEach(([path, object, owner]) => {
+			owner[path.at(-1)!] = unwrapReactive(object);
+		});
+	return unwrapReactive(subject);
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeReactive, isReactive, unwrapReactive } from './reactive';
+import { makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
 import { Computed } from './computed';
 
 describe('reactive proxy', () => {
@@ -234,6 +234,24 @@ describe('reactive proxy', () => {
 			const proxy = makeReactive(obj, { shallow: true });
 			proxy.nested = { a: 1 };
 			expect(isReactive(proxy.nested)).toBe(false);
+		});
+	});
+
+	describe('unmakeReactive', () => {
+		it('should make a reactive reactive object not reactive', () => {
+			const obj = { a: 1 };
+			const proxy = makeReactive(obj);
+			const doubleA = new Computed(() => proxy.a * 2);
+			expect(doubleA.value).toBe(2);
+			expect(doubleA.dirty).toBe(false);
+			const unreactive = unmakeReactive(proxy);
+			expect(unreactive).toBe(obj);
+			unreactive.a = 3;
+			expect(doubleA.dirty).toBe(false);
+			expect(doubleA.value).toBe(2);
+			proxy.a = 4;
+			expect(doubleA.dirty).toBe(true);
+			expect(doubleA.value).toBe(8);
 		});
 	});
 });
