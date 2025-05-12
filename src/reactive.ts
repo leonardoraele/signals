@@ -4,7 +4,12 @@ import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
-export function makeReactive<T extends object>(subject: T, { shallow = false } = {}): T {
+export interface MakeReactiveOptions {
+	/** If `true`, the object is not recursively made reactive. */
+	shallow?: boolean;
+}
+
+export function makeReactive<T extends object>(subject: T, { shallow = false }: MakeReactiveOptions = {}): T {
 	if (!shallow) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
 			.filter(([_path, object]) => !isReactive(object))
