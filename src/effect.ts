@@ -4,7 +4,7 @@ import { SignalSink } from './signal-sink.js';
 
 export class Effect implements SignalSink {
 	static createImmediate(callbackfn: () => unknown, { signal = null as AbortSignal|null } = {}): Effect {
-		const effect = new Effect(callbackfn);
+		const effect = new Effect(callbackfn, { signal });
 		effect.events.on('dirty', signal ? { signal } : {}, () => queueMicrotask(() => effect.forceRerun()))
 		return effect;
 	}
@@ -60,9 +60,11 @@ export class Effect implements SignalSink {
 		this.#abortController = new AbortController();
 		for (const dependency of dependencies) {
 			dependency.events.on('change', { signal: this.#abortController.signal }, () => {
-				this.#dirty = true;
 				this.#abortController?.abort();
-				this.#eventsController.emit('dirty');
+				if (!this.dirty) {
+					this.#dirty = true;
+					this.#eventsController.emit('dirty');
+				}
 			});
 		}
 	}
