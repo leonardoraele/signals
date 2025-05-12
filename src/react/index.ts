@@ -22,7 +22,7 @@ export function useSignalState<T>(initialValue: T|(() => T)): State<T> {
  * You can also pass an array of explicit dependencies, as is traditional for react hooks. The computed value is
  * recalculated whenever any of the dependencies change.
  */
-export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): Computed<T> {
+export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): T {
 	const rerender = useManualRerender();
 	const computed = useMemo(() => new Computed(callbackfn), deps);
 	useEffect(() => {
@@ -32,7 +32,7 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): Com
 		computed.events.on('dirty', rerender);
 		return () => computed.events.off('dirty', rerender);
 	}, [computed]);
-	return computed;
+	return computed.value;
 }
 
 /**
