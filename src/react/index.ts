@@ -36,16 +36,18 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: any[] = []): T {
 }
 
 /**
- * Similar to `useEffect`, but also watches for signals that are used inside the callback function. The callback reruns
- * when any of the dependant signals change, even if the explicit array of dependencies don't change. Different from
- * `useEffect`, the callback is not run on every rerender by default, but only when the dependant signals change.
+ * Creates an effect with the lifecycle bound to the component. The effect runs when the component mounts, similar to
+ * `useEffect`, and again asynchronously whenever a dependant signal changes. The effect is disposed when the component
+ * unmounts.
+ *
+ * This hook also accepts an array of explicit dependencies, as is traditional for react hooks. If one of the
+ * dependencies changes after a rerender, the effect is re-evaluated.
  */
-export function useSignalEffect(callbackfn: () => void, deps: any[] = []): void {
-	const rerender = useManualRerender();
+export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): void {
 	const effect = useMemo(() => new Effect(callbackfn, { lazy: true }), deps);
 	useEffect(() => {
-		effect.events.on('dirty', rerender);
-		return () => effect.events.off('dirty', rerender);
+		effect.events.on('dirty', () => queueMicrotask(() => effect.reevaluate()));
+		return () => effect.dispose();
 	}, [effect]);
 	useEffect(() => void effect.reevaluate());
 }
