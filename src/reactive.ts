@@ -20,7 +20,7 @@ export function makeReactive<T extends object>(subject: T, { shallow = false }: 
 	if (isReactive(subject)) {
 		return subject;
 	}
-	const sources = {} as { // TODO Does it makes sense to use `WeakMap` here?
+	const sources = Object.create(null) as { // TODO Does it makes sense to use `WeakMap` here?
 		[key: string|symbol]: {
 			controller: SignalController<{ change(): void; }>;
 			events: SignalEmitter<{ change(): void; }>;
