@@ -76,7 +76,7 @@ describe('effect', () => {
 			state.value = 5;
 			expect(effect.dirty).toBe(true);
 			expect(state.value).toBe(5);
-			await effect.events.next('clean');
+			await effect.events.once('clean');
 			expect(effect.dirty).toBe(false);
 			expect(state.value).toBe(10);
 			effect.dispose();
@@ -84,7 +84,7 @@ describe('effect', () => {
 			expect(effect.dirty).toBe(false);
 			expect(state.value).toBe(7);
 			await expect(new Promise((resolve, reject) => {
-				effect.events.next('clean').then(resolve);
+				effect.events.once('clean').then(resolve);
 				setTimeout(reject, 100);
 			})).rejects.toThrow();
 		});

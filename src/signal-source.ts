@@ -11,7 +11,7 @@ export namespace SignalSource {
 	const controller = new SignalController<{
 		usage(source: SignalSource): void;
 	}>();
-	export const events = controller.signal;
+	export const events = controller.emitter;
 
 	export function notifyUsage(source: SignalSource) {
 		controller.emit('usage', source);

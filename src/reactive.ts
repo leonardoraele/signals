@@ -32,7 +32,7 @@ export function makeReactive<T extends object>(subject: T, { shallow = false }: 
 			return {
 				_debug: key,
 				controller,
-				events: controller.signal,
+				events: controller.emitter,
 			};
 		})();
 		SignalSource.notifyUsage(source);

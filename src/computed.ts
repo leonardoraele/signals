@@ -15,7 +15,7 @@ export class Computed<T = unknown> implements SignalSource<T>, SignalSink {
 	}>();
 	#value: T = undefined as any;
 	#dirty = true;
-	readonly events = this.#eventsController.signal;
+	readonly events = this.#eventsController.emitter;
 
 	get value(): T {
 		if (this.#dirty) {

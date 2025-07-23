@@ -12,7 +12,7 @@ export class State<T = unknown> implements SignalSource<T>{
 		change(newValue: T, oldValue: T): void;
 	}>();
 	#value: T;
-	readonly events = this.#instanceController.signal;
+	readonly events = this.#instanceController.emitter;
 
 	get #equalityComparer(): EqualityComparer<T> {
 		return this.options?.equalityComparer ?? State.#defaultEqualityComparer;

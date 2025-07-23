@@ -25,7 +25,7 @@ export class Effect implements SignalSink {
 		clean(): void;
 	}>();
 	#abortController: AbortController|undefined = undefined;
-	readonly events = this.#eventsController.signal;
+	readonly events = this.#eventsController.emitter;
 
 	get dirty(): boolean {
 		return this.#dirty;
@@ -69,9 +69,12 @@ export class Effect implements SignalSink {
 		}
 	}
 
+	[Symbol.dispose]() {
+		this.dispose();
+	}
+
 	dispose(): void {
-		this.#abortController?.abort();
-		this.#eventsController.clear();
-		// TODO this.#eventsController.destroy();
+		this.#eventsController.destroy();
+		this.#setDependencies([]);
 	}
 }

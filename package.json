@@ -26,7 +26,7 @@
     "prepack": "run-s test build"
   },
   "dependencies": {
-    "signal-controller": "^0.3.0"
+    "signal-controller": "^0.6.0"
   },
   "peerDependencies": {
     "react": "^19.1.0"
