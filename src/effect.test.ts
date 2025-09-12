@@ -89,4 +89,41 @@ describe('effect', () => {
 			})).rejects.toThrow();
 		});
 	});
+
+	describe('scheduler option', () => {
+		it('can be used to schedule effect reevaluation', { timeout: 200 }, async () => {
+			const state = new State(1);
+			let runCount = 0;
+			const scheduler = new ReadableStream({
+				pull(controller) {
+					setTimeout(() => controller.enqueue(), 100);
+				},
+			});
+			const effect = new Effect(() => {
+				runCount++;
+				state.value *= 2;
+			}, { scheduler });
+			expect(effect.dirty).toBe(false);
+			expect(runCount).toBe(1);
+			expect(state.value).toBe(2);
+
+			state.value = 5;
+
+			expect(effect.dirty).toBe(true);
+			expect(runCount).toBe(1);
+			expect(state.value).toBe(5);
+
+			await new Promise(resolve => setTimeout(resolve, 10));
+
+			expect(effect.dirty).toBe(true);
+			expect(runCount).toBe(1);
+			expect(state.value).toBe(5);
+
+			await new Promise(resolve => setTimeout(resolve, 100));
+
+			expect(effect.dirty).toBe(false);
+			expect(runCount).toBe(2);
+			expect(state.value).toBe(10);
+		});
+	});
 });

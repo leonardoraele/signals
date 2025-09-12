@@ -11,11 +11,14 @@ export class Effect implements SignalSink {
 
 	constructor(
 		private readonly callbackfn: () => unknown,
-		{ signal = null as AbortSignal|null, lazy = false } = {}
+		{ signal = null as AbortSignal|null, lazy = false, scheduler = null as ReadableStream<void>|null } = {}
 	) {
 		signal?.addEventListener('abort', () => this.dispose());
 		if (!lazy) {
 			this.forceRerun();
+		}
+		if (scheduler) {
+			this.schedule(scheduler).then(() => this.dispose());
 		}
 	}
 
@@ -29,6 +32,12 @@ export class Effect implements SignalSink {
 
 	get dirty(): boolean {
 		return this.#dirty;
+	}
+
+	async schedule(scheduler: ReadableStream<void>): Promise<void> {
+		for await (const _ of scheduler) {
+			this.reevaluate();
+		}
 	}
 
 	reevaluate(): void {
