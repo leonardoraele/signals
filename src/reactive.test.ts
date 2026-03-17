@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
+import { makeDeepReactive, makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
 import { Computed } from './computed';
 
 describe('reactive proxy', () => {
 	describe('property reactivity', () => {
 		it('should notify changes on property set', () => {
 			const obj = { a: 1 };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			const doubleA = new Computed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -17,7 +17,7 @@ describe('reactive proxy', () => {
 
 		it('should notify changes on property delete', () => {
 			const obj = { a: 1 } as { a?: number };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -28,7 +28,7 @@ describe('reactive proxy', () => {
 
 		it('should notify changes to individual properties separately', () => {
 			const obj = { a: 1, b: 2 };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			const doubleA = new Computed(() => proxy.a * 2);
 			const doubleB = new Computed(() => proxy.b * 2);
 			doubleA.forceRerun(); // Force clean for this test
@@ -41,7 +41,7 @@ describe('reactive proxy', () => {
 		describe('new properties', () => {
 			it('should make new properties reactive', () => {
 				const obj = {} as { nested?: { a: number } };
-				const proxy = makeReactive(obj);
+				const proxy = makeDeepReactive(obj);
 				proxy.nested = { a: 1 };
 				expect(isReactive(proxy.nested)).toBe(true);
 			});
@@ -53,7 +53,7 @@ describe('reactive proxy', () => {
 
 			beforeEach(() => {
 				obj = { a: 1, b: 2 } as Record<string, number>;
-				proxy = makeReactive(obj);
+				proxy = makeDeepReactive(obj);
 			});
 
 			it('works with for..in loop', () => {
@@ -111,7 +111,7 @@ describe('reactive proxy', () => {
 
 			beforeEach(() => {
 				arr = [0, 1, 2, 3, 4];
-				proxy = makeReactive(arr);
+				proxy = makeDeepReactive(arr);
 				len = new Computed(() => proxy.length);
 				set = new Computed(() => new Set(proxy));
 				sum = new Computed(() => proxy.reduce((acc, val) => acc + val, 0));
@@ -178,7 +178,7 @@ describe('reactive proxy', () => {
 	describe('isReactive', () => {
 		it('should check whether a value is reactive', () => {
 			const obj = { a: 1 };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			expect(isReactive(proxy)).toBe(true);
 			expect(proxy.a).toBe(1);
 			proxy.a = 2;
@@ -194,7 +194,7 @@ describe('reactive proxy', () => {
 	describe('unwrapReactive', () => {
 		it('should unwrap reactive proxy', () => {
 			const obj = { a: 1 } as { a?: number };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -206,10 +206,10 @@ describe('reactive proxy', () => {
 		});
 	});
 
-	describe('shallow option', () => {
+	describe('shallow reactive', () => {
 		it('should not observe nested objects when shallow option is set', () => {
 			const obj = { a: { b: 2 } };
-			const proxy = makeReactive(obj, { shallow: true });
+			const proxy = makeReactive(obj);
 			const doubleAB = new Computed(() => proxy.a.b * 2);
 			expect(doubleAB.value).toBe(4);
 			expect(isReactive(proxy.a)).toBe(false);
@@ -218,20 +218,9 @@ describe('reactive proxy', () => {
 			expect(doubleAB.value).toBe(4);
 		});
 
-		it('should handle nested objects with shallow option', () => {
-			const obj = { a: { b: 2 } };
-			const proxy = makeReactive(obj, { shallow: false });
-			const doubleAB = new Computed(() => proxy.a.b * 2);
-			expect(isReactive(proxy.a)).toBe(true);
-			expect(doubleAB.value).toBe(4);
-			proxy.a.b = 3;
-			expect(doubleAB.value).toBe(6);
-			expect(proxy.a.b).toBe(3);
-		});
-
 		it('should not make new properties reactive when shallow option is set', () => {
 			const obj = {} as { nested?: { a: number } };
-			const proxy = makeReactive(obj, { shallow: true });
+			const proxy = makeReactive(obj);
 			proxy.nested = { a: 1 };
 			expect(isReactive(proxy.nested)).toBe(false);
 		});
@@ -240,7 +229,7 @@ describe('reactive proxy', () => {
 	describe('unmakeReactive', () => {
 		it('should make a reactive reactive object not reactive', () => {
 			const obj = { a: 1 };
-			const proxy = makeReactive(obj);
+			const proxy = makeDeepReactive(obj);
 			const doubleA = new Computed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);

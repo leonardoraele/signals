@@ -4,17 +4,20 @@ import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
-export interface MakeReactiveOptions {
-	/** If `true`, the object is not recursively made reactive. */
-	shallow?: boolean;
+export function makeDeepReactive<T extends object>(subject: T): T {
+	return _makeReactive(subject, { deep: true });
 }
 
-export function makeReactive<T extends object>(subject: T, { shallow = false }: MakeReactiveOptions = {}): T {
-	if (!shallow) {
+export function makeReactive<T extends object>(subject: T): T {
+	return _makeReactive(subject);
+}
+
+function _makeReactive<T extends object>(subject: T, { deep = false } = {}): T {
+	if (deep) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
 			.filter(([_path, object]) => !isReactive(object))
 			.forEach(([path, object, owner]) => {
-				owner[path.at(-1)!] = makeReactive(object);
+				owner[path.at(-1)!] = _makeReactive(object);
 			});
 	}
 	if (isReactive(subject)) {
@@ -52,10 +55,10 @@ export function makeReactive<T extends object>(subject: T, { shallow = false }: 
 			notifyChange(key);
 			notifyChange(self);
 			const result = Reflect.defineProperty(target, key, descriptor);
-			if (!shallow) {
+			if (deep) {
 				const value = descriptor.value ?? descriptor.get?.();
 				if (typeof value === 'object' && value !== null) {
-					Reflect.set(target, key, makeReactive(value, { shallow }));
+					Reflect.set(target, key, _makeReactive(value, { deep }));
 				}
 			}
 			return result;
@@ -100,8 +103,8 @@ export function makeReactive<T extends object>(subject: T, { shallow = false }: 
 			return Reflect.preventExtensions(target);
 		},
 		set(target, key, newValue, receiver) {
-			if (!shallow && typeof newValue === 'object' && newValue !== null) {
-				newValue = makeReactive(newValue, { shallow });
+			if (deep && typeof newValue === 'object' && newValue !== null) {
+				newValue = _makeReactive(newValue, { deep });
 			}
 			notifyChange(key);
 			return Reflect.set(target, key, newValue, receiver);
