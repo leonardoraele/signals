@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ReactiveBox } from './ReactiveBox.js';
-import { Computed } from './computed.js';
+import { Computed } from './Computed.js';
 
 describe('computed state', () => {
 	it('updates lazily, when dependencies change', () => {

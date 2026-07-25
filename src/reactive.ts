@@ -1,5 +1,5 @@
 import { SignalController, SignalEmitter } from 'signal-controller';
-import { SignalSource } from './signal-source.js';
+import { SignalSource } from './SignalSource.js';
 import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');

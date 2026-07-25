@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Computed } from './computed';
+import { Computed } from './Computed';
 import { ReactiveMap } from './ReactiveMap';
 
 describe(ReactiveMap.name, () => {

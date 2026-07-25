@@ -1,5 +1,5 @@
 import { SignalController, SignalEmitter } from "signal-controller";
-import { SignalSource } from "./signal-source";
+import { SignalSource } from "./SignalSource";
 
 export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalSource {
 	constructor(values?: Iterable<T>) {

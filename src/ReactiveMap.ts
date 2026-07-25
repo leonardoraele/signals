@@ -1,5 +1,5 @@
 import { SignalController, SignalEmitter } from "signal-controller";
-import { SignalSource } from "./signal-source";
+import { SignalSource } from "./SignalSource";
 
 export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, SignalSource {
 	constructor(entries?: Iterable<readonly [K, V]>) {

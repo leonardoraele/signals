@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ReactiveBox } from './ReactiveBox.js';
-import { Effect } from './effect.js';
+import { Effect } from './Effect.js';
 
 describe('effect', () => {
 	it('becomes dirty when dependencies change', () => {

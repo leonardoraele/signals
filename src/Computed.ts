@@ -1,6 +1,6 @@
 import { SignalController } from 'signal-controller';
-import { SignalSource } from './signal-source.js';
-import { SignalSink } from './signal-sink.js';
+import { SignalSource } from './SignalSource.js';
+import { SignalSink } from './SignalSink.js';
 
 export class Computed<T = unknown> implements SignalSource, SignalSink {
 	constructor(

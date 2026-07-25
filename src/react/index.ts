@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Computed } from '../computed.js';
-import { Effect } from '../effect.js';
+import { Computed } from '../Computed.js';
+import { Effect } from '../Effect.js';
 import { ReactiveBox } from '../ReactiveBox.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
-import { Computed } from './computed';
+import { Computed } from './Computed';
 
 describe('reactive proxy', () => {
 	describe('property reactivity', () => {

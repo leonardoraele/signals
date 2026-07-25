@@ -1,6 +1,6 @@
 import { SignalController } from 'signal-controller';
-import { SignalSource } from './signal-source.js';
-import { SignalSink } from './signal-sink.js';
+import { SignalSource } from './SignalSource.js';
+import { SignalSink } from './SignalSink.js';
 
 /**
  * An {@link Effect} is a reactive procedure that is automatically triggered whenever its dependencies change. It can be

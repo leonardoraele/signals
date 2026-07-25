@@ -1,12 +1,11 @@
 import { SignalController } from 'signal-controller';
-import { SignalSource } from './signal-source.js';
+import { SignalSource } from './SignalSource.js';
 
 /**
- * Represents a mutable value that can be observed for changes. It allows you to get and set the value, and it emits
- * events when the value changes.
+ * Represents a mutable variable that holds a value and can be observed when the value is set.
  *
- * `change` events are only emitted if the value is set to a new value that is not equal to the current value. You can
- * optionally provide a custom equality comparer function to determine whether two values are considered equal.
+ * It only emits `change` events if the value is set to a new value that is different from the current value in the box.
+ * You can optionally provide a custom equality comparer function to determine whether two values are considered equal.
  */
 export class ReactiveBox<T = unknown> implements SignalSource {
 	static readonly #ABORT_ITERATION_SYMBOL = Symbol();

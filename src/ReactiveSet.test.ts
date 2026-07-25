@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Computed } from './computed';
+import { Computed } from './Computed';
 import { ReactiveSet } from './ReactiveSet';
 
 describe(ReactiveSet.name, () => {
