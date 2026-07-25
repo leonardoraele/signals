@@ -257,4 +257,26 @@ describe('reactive proxy', () => {
 			expect(doubleB.dirty).toBe(true);
 		});
 	});
+
+	describe('built-in types made reactive', () => {
+		it('should work with maps', () => {
+			const map = new Map([['a', 1]]);
+			const proxyMap = makeReactive(map);
+			const doubleA = new Computed(() => (proxyMap.get('a') ?? 0) * 2);
+			expect(doubleA.value).toBe(2);
+			proxyMap.set('a', 3);
+			expect(doubleA.dirty).toBe(true);
+			expect(doubleA.value).toBe(6);
+		});
+
+		it('should work with sets', () => {
+			const set = new Set([1]);
+			const proxySet = makeReactive(set);
+			const hasOne = new Computed(() => proxySet.has(1));
+			expect(hasOne.value).toBe(true);
+			proxySet.delete(1);
+			expect(hasOne.dirty).toBe(true);
+			expect(hasOne.value).toBe(false);
+		});
+	});
 });
