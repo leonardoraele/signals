@@ -126,16 +126,28 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 	});
 }
 
+/**
+ * This function checks if the given object is a reactive proxy created by the {@link makeReactive} function.
+ */
 export function isReactive(subject: object): boolean {
 	return PROXY_ESCAPE_SYMBOL in subject;
 }
 
+/**
+ * This function takes a reactive proxy and returns the original wrapped object. If the input is not a reactive proxy,
+ * it simply returns the input object.
+ */
 export function unwrapReactive<T extends object>(subject: T): T {
 	return PROXY_ESCAPE_SYMBOL in subject
 		? subject[PROXY_ESCAPE_SYMBOL] as T
 		: subject;
 }
 
+/**
+ * This function takes a reactive proxy and returns the original object that was made reactive. It also recursively
+ * unwraps any nested reactive proxies within the object. This is useful if the reactive proxy was created with the
+ * `deep` option set to `true`, and you want to get the original object without any reactive proxies.
+ */
 export function unmakeReactive<T extends object>(subject: T): T {
 	searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
 		.filter(([_path, object]) => !isReactive(object))
