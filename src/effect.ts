@@ -2,6 +2,10 @@ import { SignalController } from 'signal-controller';
 import { SignalSource } from './signal-source.js';
 import { SignalSink } from './signal-sink.js';
 
+/**
+ * An {@link Effect} is a reactive procedure that is automatically triggered whenever its dependencies change. It can be
+ * used to perform side effects in response to changes in reactive state.
+ */
 export class Effect implements SignalSink {
 	static createImmediate(callbackfn: () => unknown, { signal = null as AbortSignal|null } = {}): Effect {
 		const effect = new Effect(callbackfn, { signal });
@@ -11,7 +15,11 @@ export class Effect implements SignalSink {
 
 	constructor(
 		private readonly callbackfn: () => unknown,
-		{ signal = null as AbortSignal|null, lazy = false, scheduler = null as ReadableStream<void>|null } = {}
+		{
+			signal = null as AbortSignal|null,
+			lazy = false,
+			scheduler = null as ReadableStream<void> | AsyncIterator<void> | null,
+		} = {},
 	) {
 		signal?.addEventListener('abort', () => this.dispose());
 		if (!lazy) {
@@ -34,9 +42,15 @@ export class Effect implements SignalSink {
 		return this.#dirty;
 	}
 
-	async schedule(scheduler: ReadableStream<void>): Promise<void> {
-		for await (const _ of scheduler) {
-			this.reevaluate();
+	async schedule(scheduler: ReadableStream<void> | AsyncIterator<void>): Promise<void> {
+		if (scheduler instanceof ReadableStream) {
+			for await (const _ of scheduler) {
+				this.reevaluate();
+			}
+		} else {
+			for (let next: IteratorResult<void>; next = await scheduler.next(), !next.done;) {
+				this.reevaluate();
+			}
 		}
 	}
 

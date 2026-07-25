@@ -125,5 +125,50 @@ describe('effect', () => {
 			expect(runCount).toBe(2);
 			expect(state.value).toBe(10);
 		});
+
+		it('accepts an async iterator as scheduler', { timeout: 200 }, async () => {
+			const bus = new EventTarget();
+			const scheduler = (async function* () {
+				while (true) {
+					await new Promise(resolve => bus.addEventListener('next', resolve, { once: true }));
+					yield;
+				}
+			})();
+			const next = () => bus.dispatchEvent(new Event('next'));
+
+			let sum = 0;
+			const addend = new State(0);
+			const effect = new Effect(() => {
+				sum += addend.value;
+				addend.value = 0;
+			}, { scheduler: scheduler as AsyncGenerator<void> });
+
+			expect(effect.dirty).toBe(false);
+			expect(sum).toBe(0);
+
+			addend.value = 5;
+
+			expect(effect.dirty).toBe(true);
+			expect(sum).toBe(0);
+
+			next();
+			await new Promise<void>(queueMicrotask);
+			await new Promise<void>(queueMicrotask);
+
+			expect(effect.dirty).toBe(false);
+			expect(sum).toBe(5);
+
+			addend.value = 3;
+
+			expect(effect.dirty).toBe(true);
+			expect(sum).toBe(5);
+
+			next();
+			await new Promise<void>(queueMicrotask);
+			await new Promise<void>(queueMicrotask);
+
+			expect(effect.dirty).toBe(false);
+			expect(sum).toBe(8);
+		});
 	});
 });
