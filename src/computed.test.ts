@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { State } from './state.js';
+import { ReactiveBox } from './ReactiveBox.js';
 import { Computed } from './computed.js';
 
 describe('computed state', () => {
 	it('updates lazily, when dependencies change', () => {
-		const a = new State(2);
-		const b = new State(3);
+		const a = new ReactiveBox(2);
+		const b = new ReactiveBox(3);
 		const sum = new Computed(() => a.value + b.value);
 		const doubleSum = new Computed(() => sum.value * 2);
 

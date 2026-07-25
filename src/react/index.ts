@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Computed } from '../computed.js';
 import { Effect } from '../effect.js';
-import { State } from '../state.js';
+import { ReactiveBox } from '../ReactiveBox.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useSignalState<T>(initialValue: T|(() => T)): State<T> {
+export function useSignalState<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const signal = new State<T>(state);
+		const signal = new ReactiveBox<T>(state);
 		signal.events.on('change', newValue => setState(newValue));
 		return signal;
 	}, []);

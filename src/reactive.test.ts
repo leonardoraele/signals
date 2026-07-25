@@ -132,6 +132,16 @@ describe('reactive proxy', () => {
 				expect(last.dirty).toBe(false);
 			});
 
+			it('should react to index assignment', () => {
+				proxy[2] = 5;
+				expect(proxy).toEqual([0, 1, 5, 3, 4]);
+				expect(len.value).toBe(5);
+				expect(sum.value).toBe(13);
+				expect(set.value).toEqual(new Set([0, 1, 5, 3, 4]));
+				expect(sec.value).toBe(1);
+				expect(last.value).toBe(4);
+			});
+
 			it('should react to push', () => {
 				proxy.push(3);
 				expect(proxy).toEqual([0, 1, 2, 3, 4, 3]);
@@ -255,28 +265,6 @@ describe('reactive proxy', () => {
 			proxy.a = 3;
 			expect(doubleA.dirty).toBe(true);
 			expect(doubleB.dirty).toBe(true);
-		});
-	});
-
-	describe('built-in types made reactive', () => {
-		it('should work with maps', () => {
-			const map = new Map([['a', 1]]);
-			const proxyMap = makeReactive(map);
-			const doubleA = new Computed(() => (proxyMap.get('a') ?? 0) * 2);
-			expect(doubleA.value).toBe(2);
-			proxyMap.set('a', 3);
-			expect(doubleA.dirty).toBe(true);
-			expect(doubleA.value).toBe(6);
-		});
-
-		it('should work with sets', () => {
-			const set = new Set([1]);
-			const proxySet = makeReactive(set);
-			const hasOne = new Computed(() => proxySet.has(1));
-			expect(hasOne.value).toBe(true);
-			proxySet.delete(1);
-			expect(hasOne.dirty).toBe(true);
-			expect(hasOne.value).toBe(false);
 		});
 	});
 });

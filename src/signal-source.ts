@@ -1,6 +1,6 @@
 import { SignalController, SignalEmitter } from 'signal-controller';
 
-export interface SignalSource<T = unknown> {
+export interface SignalSource {
 	// readonly value: T;
 	readonly events: SignalEmitter<{
 		change(): void;

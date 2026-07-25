@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { State } from './state.js';
+import { ReactiveBox } from './ReactiveBox.js';
 import { Effect } from './effect.js';
 
 describe('effect', () => {
 	it('becomes dirty when dependencies change', () => {
-		const state = new State(0);
+		const state = new ReactiveBox(0);
 		const effect = new Effect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
@@ -14,7 +14,7 @@ describe('effect', () => {
 	});
 
 	it('runs on reevaluation only if dirty', () => {
-		const state = new State(0);
+		const state = new ReactiveBox(0);
 		const effect = new Effect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
@@ -30,7 +30,7 @@ describe('effect', () => {
 	});
 
 	it('stops tracking dependencies after being disposed', () => {
-		const state = new State(0);
+		const state = new ReactiveBox(0);
 		const effect = new Effect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
@@ -69,7 +69,7 @@ describe('effect', () => {
 
 	describe('createImmediate static function', () => {
 		it('executes immediately', { timeout: 200 }, async () => {
-			const state = new State(1);
+			const state = new ReactiveBox(1);
 			const effect = Effect.createImmediate(() => state.value *= 2);
 			expect(effect.dirty).toBe(false);
 			expect(state.value).toBe(2);
@@ -92,9 +92,9 @@ describe('effect', () => {
 
 	describe('scheduler option', () => {
 		it('can be used to schedule effect reevaluation', { timeout: 200 }, async () => {
-			const state = new State(1);
+			const state = new ReactiveBox(1);
 			let runCount = 0;
-			const scheduler = new ReadableStream({
+			const scheduler = new ReadableStream<void>({
 				pull(controller) {
 					setTimeout(() => controller.enqueue(), 100);
 				},
@@ -137,7 +137,7 @@ describe('effect', () => {
 			const next = () => bus.dispatchEvent(new Event('next'));
 
 			let sum = 0;
-			const addend = new State(0);
+			const addend = new ReactiveBox(0);
 			const effect = new Effect(() => {
 				sum += addend.value;
 				addend.value = 0;
