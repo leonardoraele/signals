@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeReactive, isReactive, unwrapReactive, unmakeReactive } from './makeReactive';
+import { makeReactive, isReactiveProxy, unwrapReactiveProxy, unmakeReactive } from './makeReactive';
 import { Computed } from './Computed';
 
 describe('reactive proxy', () => {
@@ -43,7 +43,7 @@ describe('reactive proxy', () => {
 				const obj = {} as { nested?: { a: number } };
 				const proxy = makeReactive(obj, { deep: true });
 				proxy.nested = { a: 1 };
-				expect(isReactive(proxy.nested)).toBe(true);
+				expect(isReactiveProxy(proxy.nested)).toBe(true);
 			});
 		});
 
@@ -189,7 +189,7 @@ describe('reactive proxy', () => {
 		it('should check whether a value is reactive', () => {
 			const obj = { a: 1 };
 			const proxy = makeReactive(obj, { deep: true });
-			expect(isReactive(proxy)).toBe(true);
+			expect(isReactiveProxy(proxy)).toBe(true);
 			expect(proxy.a).toBe(1);
 			proxy.a = 2;
 			expect(proxy.a).toBe(2);
@@ -197,7 +197,7 @@ describe('reactive proxy', () => {
 
 		it('should return false for non-reactive values', () => {
 			const obj = { a: 1 };
-			expect(isReactive(obj)).toBe(false);
+			expect(isReactiveProxy(obj)).toBe(false);
 		});
 	});
 
@@ -208,7 +208,7 @@ describe('reactive proxy', () => {
 			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
-			const unwrapped = unwrapReactive(proxy);
+			const unwrapped = unwrapReactiveProxy(proxy);
 			unwrapped.a = 3;
 			delete unwrapped.a;
 			expect(doubleA.dirty).toBe(false);
@@ -222,7 +222,7 @@ describe('reactive proxy', () => {
 			const proxy = makeReactive(obj);
 			const doubleAB = new Computed(() => proxy.a.b * 2);
 			expect(doubleAB.value).toBe(4);
-			expect(isReactive(proxy.a)).toBe(false);
+			expect(isReactiveProxy(proxy.a)).toBe(false);
 			proxy.a.b = 3;
 			expect(doubleAB.dirty).toBe(false);
 			expect(doubleAB.value).toBe(4);
@@ -232,7 +232,7 @@ describe('reactive proxy', () => {
 			const obj = {} as { nested?: { a: number } };
 			const proxy = makeReactive(obj);
 			proxy.nested = { a: 1 };
-			expect(isReactive(proxy.nested)).toBe(false);
+			expect(isReactiveProxy(proxy.nested)).toBe(false);
 		});
 	});
 

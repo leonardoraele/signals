@@ -5,7 +5,7 @@ import { ReactiveBox } from '../ReactiveBox.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useSignalState<T>(initialValue: T|(() => T)): ReactiveBox<T> {
+export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
 		const signal = new ReactiveBox<T>(state);

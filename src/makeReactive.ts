@@ -17,12 +17,12 @@ const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 export function makeReactive<T extends object>(subject: T, { deep = false, atomic = false } = {}): T {
 	if (deep) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
-			.filter(([_path, object]) => !isReactive(object))
+			.filter(([_path, object]) => !isReactiveProxy(object))
 			.forEach(([path, object, owner]) => {
 				owner[path.at(-1)!] = makeReactive(object);
 			});
 	}
-	if (isReactive(subject)) {
+	if (isReactiveProxy(subject)) {
 		return subject;
 	}
 	const sources = Object.create(null) as { // TODO Does it makes sense to use `WeakMap` here?
@@ -129,7 +129,7 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 /**
  * This function checks if the given object is a reactive proxy created by the {@link makeReactive} function.
  */
-export function isReactive(subject: object): boolean {
+export function isReactiveProxy(subject: object): boolean {
 	return PROXY_ESCAPE_SYMBOL in subject;
 }
 
@@ -137,7 +137,7 @@ export function isReactive(subject: object): boolean {
  * This function takes a reactive proxy and returns the original wrapped object. If the input is not a reactive proxy,
  * it simply returns the input object.
  */
-export function unwrapReactive<T extends object>(subject: T): T {
+export function unwrapReactiveProxy<T extends object>(subject: T): T {
 	return PROXY_ESCAPE_SYMBOL in subject
 		? subject[PROXY_ESCAPE_SYMBOL] as T
 		: subject;
@@ -150,9 +150,9 @@ export function unwrapReactive<T extends object>(subject: T): T {
  */
 export function unmakeReactive<T extends object>(subject: T): T {
 	searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
-		.filter(([_path, object]) => !isReactive(object))
+		.filter(([_path, object]) => !isReactiveProxy(object))
 		.forEach(([path, object, owner]) => {
-			owner[path.at(-1)!] = unwrapReactive(object);
+			owner[path.at(-1)!] = unwrapReactiveProxy(object);
 		});
-	return unwrapReactive(subject);
+	return unwrapReactiveProxy(subject);
 }
