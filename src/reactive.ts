@@ -4,32 +4,37 @@ import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
-export function makeDeepReactive<T extends object>(subject: T): T {
-	return _makeReactive(subject, { deep: true });
-}
-
-export function makeReactive<T extends object>(subject: T): T {
-	return _makeReactive(subject);
-}
-
-function _makeReactive<T extends object>(subject: T, { deep = false } = {}): T {
+/**
+ * This function takes an object and returns a reactive proxy of that object. The reactive proxy will emit change events
+ * whenever any property of the object is changed.
+ *
+ * If the `deep` option is set to `true`, the function will also make all nested objects reactive.
+ *
+ * If the `atomic` option is set to `true`, the function will treat the entire object as a single unit, and any change
+ * to any property will emit a change event for the entire object. This means any effect that depends on one property of
+ * the object will be re-run whenever that property or any other property of the object changes.
+ */
+export function makeReactive<T extends object>(subject: T, { deep = false, atomic = false } = {}): T {
 	if (deep) {
 		searchPropertiesDeep<any>(subject, { yield: 'objects', order: 'depth-first' })
 			.filter(([_path, object]) => !isReactive(object))
 			.forEach(([path, object, owner]) => {
-				owner[path.at(-1)!] = _makeReactive(object);
+				owner[path.at(-1)!] = makeReactive(object);
 			});
 	}
 	if (isReactive(subject)) {
 		return subject;
 	}
 	const sources = Object.create(null) as { // TODO Does it makes sense to use `WeakMap` here?
-		[key: string|symbol]: {
+		[key: PropertyKey]: {
 			controller: SignalController<{ change(): void; }>;
 			events: SignalEmitter<{ change(): void; }>;
 		};
 	};
-	const notifyUsage = (key: string|symbol) => {
+	const notifyUsage = (key: PropertyKey) => {
+		if (atomic) {
+			key = self;
+		}
 		const source = sources[key] ??= (() => {
 			const controller = new SignalController<{ change(): void; }>();
 			return {
@@ -40,7 +45,12 @@ function _makeReactive<T extends object>(subject: T, { deep = false } = {}): T {
 		})();
 		SignalSource.notifyUsage(source);
 	};
-	const notifyChange = (key: string|symbol) => sources[key]?.controller.emit('change');;
+	const notifyChange = (key: PropertyKey) => {
+		if (atomic) {
+			key = self;
+		}
+		sources[key]?.controller.emit('change');
+	};
 	const self = Symbol('self');
 	return new Proxy(subject, {
 		apply(target: any, thisArg, argArray) {
@@ -58,7 +68,7 @@ function _makeReactive<T extends object>(subject: T, { deep = false } = {}): T {
 			if (deep) {
 				const value = descriptor.value ?? descriptor.get?.();
 				if (typeof value === 'object' && value !== null) {
-					Reflect.set(target, key, _makeReactive(value, { deep }));
+					Reflect.set(target, key, makeReactive(value, { deep }));
 				}
 			}
 			return result;
@@ -104,7 +114,7 @@ function _makeReactive<T extends object>(subject: T, { deep = false } = {}): T {
 		},
 		set(target, key, newValue, receiver) {
 			if (deep && typeof newValue === 'object' && newValue !== null) {
-				newValue = _makeReactive(newValue, { deep });
+				newValue = makeReactive(newValue, { deep });
 			}
 			notifyChange(key);
 			return Reflect.set(target, key, newValue, receiver);

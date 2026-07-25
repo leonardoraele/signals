@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeDeepReactive, makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
+import { makeReactive, isReactive, unwrapReactive, unmakeReactive } from './reactive';
 import { Computed } from './computed';
 
 describe('reactive proxy', () => {
 	describe('property reactivity', () => {
 		it('should notify changes on property set', () => {
 			const obj = { a: 1 };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -17,7 +17,7 @@ describe('reactive proxy', () => {
 
 		it('should notify changes on property delete', () => {
 			const obj = { a: 1 } as { a?: number };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -28,7 +28,7 @@ describe('reactive proxy', () => {
 
 		it('should notify changes to individual properties separately', () => {
 			const obj = { a: 1, b: 2 };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => proxy.a * 2);
 			const doubleB = new Computed(() => proxy.b * 2);
 			doubleA.forceRerun(); // Force clean for this test
@@ -41,7 +41,7 @@ describe('reactive proxy', () => {
 		describe('new properties', () => {
 			it('should make new properties reactive', () => {
 				const obj = {} as { nested?: { a: number } };
-				const proxy = makeDeepReactive(obj);
+				const proxy = makeReactive(obj, { deep: true });
 				proxy.nested = { a: 1 };
 				expect(isReactive(proxy.nested)).toBe(true);
 			});
@@ -53,7 +53,7 @@ describe('reactive proxy', () => {
 
 			beforeEach(() => {
 				obj = { a: 1, b: 2 } as Record<string, number>;
-				proxy = makeDeepReactive(obj);
+				proxy = makeReactive(obj, { deep: true });
 			});
 
 			it('works with for..in loop', () => {
@@ -111,7 +111,7 @@ describe('reactive proxy', () => {
 
 			beforeEach(() => {
 				arr = [0, 1, 2, 3, 4];
-				proxy = makeDeepReactive(arr);
+				proxy = makeReactive(arr, { deep: true });
 				len = new Computed(() => proxy.length);
 				set = new Computed(() => new Set(proxy));
 				sum = new Computed(() => proxy.reduce((acc, val) => acc + val, 0));
@@ -178,7 +178,7 @@ describe('reactive proxy', () => {
 	describe('isReactive', () => {
 		it('should check whether a value is reactive', () => {
 			const obj = { a: 1 };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			expect(isReactive(proxy)).toBe(true);
 			expect(proxy.a).toBe(1);
 			proxy.a = 2;
@@ -194,7 +194,7 @@ describe('reactive proxy', () => {
 	describe('unwrapReactive', () => {
 		it('should unwrap reactive proxy', () => {
 			const obj = { a: 1 } as { a?: number };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -229,7 +229,7 @@ describe('reactive proxy', () => {
 	describe('unmakeReactive', () => {
 		it('should make a reactive reactive object not reactive', () => {
 			const obj = { a: 1 };
-			const proxy = makeDeepReactive(obj);
+			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
@@ -241,6 +241,20 @@ describe('reactive proxy', () => {
 			proxy.a = 4;
 			expect(doubleA.dirty).toBe(true);
 			expect(doubleA.value).toBe(8);
+		});
+	});
+
+	describe('atomic reactive', () => {
+		it('should treat the entire object as a single unit when atomic option is set', () => {
+			const obj = { a: 1, b: 2 };
+			const proxy = makeReactive(obj, { atomic: true });
+			const doubleA = new Computed(() => proxy.a * 2);
+			const doubleB = new Computed(() => proxy.b * 2);
+			doubleA.forceRerun(); // Force clean for this test
+			doubleB.forceRerun(); // Force clean for this test
+			proxy.a = 3;
+			expect(doubleA.dirty).toBe(true);
+			expect(doubleB.dirty).toBe(true);
 		});
 	});
 });
