@@ -4,8 +4,37 @@ import { SignalSink } from './SignalSink.js';
 import { createReadableStreamWithController } from './util/stream.js';
 
 export interface EffectOptions {
+	/**
+	 * An {@link AbortSignal} that can be used to automatically dispose the effect when the signal is triggered. If you
+	 * do not provide an {@link AbortSignal}, you must call {@link Effect.dispose} manually to clean up the effect when
+	 * it is no longer needed, otherwise it will continue to listen for changes in its dependencies indefinitely.
+	 */
 	signal?: AbortSignal | null | undefined;
+
+	/**
+	 * By default, the effect is immediately, and synchronously, executed when it is created. If you set this option to
+	 * true, the effect will not be executed until you call the {@link Effect.reevaluate} or {@link Effect.forceRerun}
+	 * methods manually. (or the scheduler determines it should, if you provided one)
+	 *
+	 * @remarks
+	 *
+	 * This is useful if you do not want the effect to be executed immediately when it is created, or if you want to
+	 * control when the effect is executed for the first time.
+	 */
 	lazy?: boolean;
+
+	/**
+	 * An asynchronous iterable or iterator that is used to determine when the effect should be executed. Whenever the
+	 * scheduler yields a value, the effect is executed.
+	 *
+	 * @remarks
+	 *
+	 * The effect is only executed if it is dirty, meaning that one or more of its dependencies have changed since the
+	 * last time it was executed. If the scheduler yields a value and the effect is not dirty, nothing happens.
+	 *
+	 * If a scheduler is provided, the effect will be automatically disposed if the scheduler ends iteration, and the
+	 * iterator will be aborted if the effect is manually disposed.
+	 */
 	scheduler?: AsyncIterable<unknown> | AsyncIterator<unknown> | null | undefined;
 }
 
@@ -35,6 +64,8 @@ export interface EffectOptions {
 export class Effect implements SignalSink {
 	/**
 	 * Creates an {@link Effect} that is executed immediately whenever any of its dependencies change.
+	 *
+	 * @remarks
 	 *
 	 * The effect will be automatically disposed when the provided {@link AbortSignal} is triggered, if any. If you not
 	 * provide an {@link AbortSignal}, you must call {@link Effect.dispose} manually to clean up the effect when it is
