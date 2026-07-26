@@ -1,4 +1,5 @@
-import { SignalController, SignalEmitter } from 'signal-controller';
+import { SignalEmitter } from 'signal-controller';
+import { createReadableStreamWithController } from './util/stream';
 
 export interface SignalSource {
 	// readonly value: T;
@@ -8,12 +9,19 @@ export interface SignalSource {
 }
 
 export namespace SignalSource {
-	const controller = new SignalController<{
-		usage(source: SignalSource): void;
-	}>();
-	export const events = controller.emitter;
+	const controllers: ReadableStreamDefaultController<SignalSource>[] = [];
+
+	export function listen({ signal = undefined as AbortSignal | undefined } = {}): AsyncIterator<SignalSource> {
+		const { stream, controller } = createReadableStreamWithController<SignalSource>();
+		controllers.push(controller);
+		signal?.addEventListener('abort', () => {
+			controller.close();
+			controllers.splice(0, controllers.length, ...controllers.filter(c => c !== controller));
+		});
+		return stream[Symbol.asyncIterator]();
+	}
 
 	export function notifyUsage(source: SignalSource) {
-		controller.emit('usage', source);
+		controllers.at(-1)?.enqueue(source);
 	}
 }
