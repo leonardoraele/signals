@@ -6,6 +6,10 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 		super(entries);
 	}
 
+	public async *observe(_signal?: AbortSignal): AsyncIterator<[K, V]> {
+		// TODO
+	}
+
 	private _eventController = new SignalController<{
 		change(): void;
 	}>();
@@ -16,6 +20,10 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 		return this._eventController.emitter;
 	}
 
+	private _notifyChange(): void {
+		this._eventController.emit('change');
+	}
+
 	override get size(): number {
 		const result = super.size;
 		SignalSource.notifyUsage(this);
@@ -24,13 +32,13 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 
 	override clear(): void {
 		super.clear();
-		this._eventController?.emit("change");
+		this._notifyChange();
 	}
 
 	override delete(key: K): boolean {
 		SignalSource.notifyUsage(this);
 		const result = super.delete(key);
-		this._eventController?.emit("change");
+		this._notifyChange();
 		return result;
 	}
 
@@ -51,7 +59,7 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 
 	override set(key: K, value: V): this {
 		const result = super.set(key, value);
-		this._eventController?.emit("change");
+		this._notifyChange();
 		return result;
 	}
 
@@ -73,14 +81,14 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 	override getOrInsert(key: K, defaultValue: V): V {
 		SignalSource.notifyUsage(this);
 		const result = super.getOrInsert(key, defaultValue);
-		this._eventController?.emit("change");
+		this._notifyChange();
 		return result;
 	}
 
 	override getOrInsertComputed(key: K, callback: (key: K) => V): V {
 		SignalSource.notifyUsage(this);
 		const result = super.getOrInsertComputed(key, callback);
-		this._eventController?.emit("change");
+		this._notifyChange();
 		return result;
 	}
 

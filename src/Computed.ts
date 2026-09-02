@@ -1,67 +1,98 @@
 import { SignalController } from 'signal-controller';
 import { SignalSource } from './SignalSource.js';
 import { SignalSink } from './SignalSink.js';
+import { AsyncIterator } from 'async-iterator-helpers-ponyfill';
 
 export class Computed<T = unknown> implements SignalSource, SignalSink {
-	constructor(
+	public constructor(
 		private readonly callbackfn: () => T,
 	) {}
 
-	#abortController: AbortController|undefined = undefined;
-	#eventsController = new SignalController<{
+	private _abortController: AbortController|undefined = undefined;
+	private _eventsController = new SignalController<{
 		change(): void;
 		dirty(): void;
 		clean(): void;
 	}>();
-	#value: T = undefined as any;
-	#dirty = true;
-	readonly events = this.#eventsController.emitter;
+	private _value: T = undefined as any;
+	private _dirty = true;
+	public readonly events = this._eventsController.emitter;
 
-	get value(): T {
-		if (this.#dirty) {
-			this.forceRerun();
+	public get value(): T {
+		if (this._dirty) {
+			this.recompute();
 		}
 		SignalSource.notifyUsage(this);
-		return this.#value;
+		return this._value;
 	}
 
-	get dirty(): boolean {
-		return this.#dirty;
+	public get dirty(): boolean {
+		return this._dirty;
 	}
 
-	forceRerun(): void {
+	public recompute(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
-		SignalSource.events.on('usage', { signal: controller.signal }, source => dependencies.add(source));
+		SignalSource.observeUsages({ signal: controller.signal })
+			.on('usage', source => dependencies.add(source));
 		try {
-			this.#value = this.callbackfn();
-			this.#dirty = false;
-			this.#eventsController.emit('clean');
+			this._value = this.callbackfn();
+			this._dirty = false;
+			this._eventsController.emit('clean');
 		} finally {
 			controller.abort();
-			this.#setDependencies(Iterator.from(dependencies).toArray());
+			this._setDependencies(Array.from(dependencies));
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
-		this.#abortController?.abort();
+	private _setDependencies(dependencies: SignalSource[]) {
+		this._abortController?.abort();
 		if (!dependencies.length) {
-			this.#abortController = undefined;
+			this._abortController = undefined;
 			return;
 		}
-		this.#abortController = new AbortController();
+		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.on('change', { signal: this.#abortController.signal }, () => {
-				this.#dirty = true;
-				this.#abortController?.abort();
-				this.#eventsController.emit('change');
-				this.#eventsController.emit('dirty');
-			});
+			AsyncIterator.from(dependency.observe(this._abortController.signal))
+				.forEach(() => {
+					this._dirty = true;
+					this._abortController?.abort();
+					this._eventsController.emit('change');
+					this._eventsController.emit('dirty');
+				});
 		}
 	}
 
-	dispose(): void {
-		this.#abortController?.abort();
-		this.#eventsController.clear();
+	public async *observe(signal?: AbortSignal): AsyncGenerator<T> {
+		let lastValue: T;
+		yield lastValue = this.value;
+		while (!signal?.aborted) {
+			let resolve: () => void;
+			let reject: (reason?: unknown) => void;
+			try {
+				await new Promise<void>((_resolve, _reject) => {
+					resolve = _resolve;
+					reject = _reject;
+					this.events.on('change', resolve);
+					signal?.addEventListener('abort', reject);
+				});
+				if (this.value !== lastValue) {
+					yield lastValue = this.value;
+				}
+			} catch (error) {
+				if (!signal?.aborted) {
+					throw error;
+				}
+			} finally {
+				this.events.off('change', resolve!);
+				signal?.removeEventListener('abort', reject!);
+			}
+		}
+	}
+
+
+	public dispose(): void {
+		this._abortController?.abort();
+		this._eventsController.clear();
 	}
 }

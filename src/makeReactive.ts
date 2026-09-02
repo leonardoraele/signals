@@ -1,6 +1,7 @@
 import { SignalController, SignalEmitter } from 'signal-controller';
 import { SignalSource } from './SignalSource.js';
 import { searchPropertiesDeep } from './util/property-iterator.js';
+import { AsyncIterator } from 'async-iterator-helpers-ponyfill';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
 
@@ -29,6 +30,7 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 		[key: PropertyKey]: {
 			controller: SignalController<{ change(): void; }>;
 			events: SignalEmitter<{ change(): void; }>;
+			observe(signal?: AbortSignal): AsyncIterator<unknown>;
 		};
 	};
 	const notifyUsage = (key: PropertyKey) => {
@@ -38,9 +40,14 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 		const source = sources[key] ??= (() => {
 			const controller = new SignalController<{ change(): void; }>();
 			return {
-				_debug: key,
+				_debug: key as PropertyKey,
 				controller,
 				events: controller.emitter,
+				observe(signal?: AbortSignal): AsyncIterator<unknown> {
+					const stream = this.events.createReadableStream('change');
+					signal?.addEventListener('abort', () => stream.cancel());
+					return AsyncIterator.from<unknown>(stream);
+				},
 			};
 		})();
 		SignalSource.notifyUsage(source);

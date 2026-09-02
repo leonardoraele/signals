@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ReactiveBox } from './ReactiveBox.js';
+import { AsyncIterator } from 'async-iterator-helpers-ponyfill';
 
 describe(ReactiveBox.name, () => {
 	it('is set synchronously', () => {
@@ -12,8 +13,9 @@ describe(ReactiveBox.name, () => {
 	it('emits events when changed', async () =>{
 		const state = new ReactiveBox(1);
 		const fn = vi.fn();
-		state.events.on('change', fn);
+		AsyncIterator.from(state.observe()).forEach(fn);
 		state.value = 2;
+		await new Promise<void>(resolve => setTimeout(resolve, 0));
 		expect(fn).toHaveBeenCalledTimes(1);
 	});
 });

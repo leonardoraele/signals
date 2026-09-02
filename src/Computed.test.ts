@@ -3,7 +3,7 @@ import { ReactiveBox } from './ReactiveBox.js';
 import { Computed } from './Computed.js';
 
 describe('computed state', () => {
-	it('updates lazily, when dependencies change', () => {
+	it('updates lazily, when dependencies change', async () => {
 		const a = new ReactiveBox(2);
 		const b = new ReactiveBox(3);
 		const sum = new Computed(() => a.value + b.value);

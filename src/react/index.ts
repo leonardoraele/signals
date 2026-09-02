@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Computed } from '../Computed.js';
 import { Effect } from '../Effect.js';
 import { ReactiveBox } from '../ReactiveBox.js';
+import { AsyncIterator } from 'async-iterator-helpers-ponyfill';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
 export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const signal = new ReactiveBox<T>(state);
-		signal.events.on('change', newValue => setState(newValue));
-		return signal;
+		const box = new ReactiveBox<T>(state);
+		AsyncIterator.from(box.observe()).forEach(newValue => setState(newValue));
+		return box;
 	}, []);
 }
 

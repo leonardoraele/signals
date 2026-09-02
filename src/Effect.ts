@@ -2,6 +2,7 @@ import { SignalController } from 'signal-controller';
 import { SignalSource } from './SignalSource.js';
 import { SignalSink } from './SignalSink.js';
 import { createReadableStreamWithController } from './util/stream.js';
+import { AsyncIterator } from 'async-iterator-helpers-ponyfill';
 
 export interface EffectOptions {
 	/**
@@ -13,7 +14,7 @@ export interface EffectOptions {
 
 	/**
 	 * By default, the effect is immediately, and synchronously, executed when it is created. If you set this option to
-	 * true, the effect will not be executed until you call the {@link Effect.reevaluate} or {@link Effect.forceRerun}
+	 * true, the effect will not be executed until you call the {@link Effect.reevaluate} or {@link Effect.recompute}
 	 * methods manually. (or the scheduler determines it should, if you provided one)
 	 *
 	 * @remarks
@@ -35,7 +36,7 @@ export interface EffectOptions {
 	 * If a scheduler is provided, the effect will be automatically disposed if the scheduler ends iteration, and the
 	 * iterator will be aborted if the effect is manually disposed.
 	 */
-	scheduler?: AsyncIterable<unknown> | AsyncIterator<unknown> | null | undefined;
+	scheduler?: globalThis.AsyncIterable<unknown> | globalThis.AsyncIterator<unknown> | null | undefined;
 }
 
 /**
@@ -46,11 +47,11 @@ export interface EffectOptions {
  *
  * You have control over when the effect is executed. By default, the effect is not executed automatically when changes
  * are detected. You can check if the effect needs to be executed by checking the {@link Effect.dirty} property, and you
- * can run the effect by calling the {@link Effect.reevaluate} or {@link Effect.forceRerun} methods.
+ * can run the effect by calling the {@link Effect.reevaluate} or {@link Effect.recompute} methods.
  *
  * To have the effect executed automatically whenever any of its dependencies change, you can create the effect by
  * calling the static {@link Effect.createImmediate} method instead of this class' constructor. In this case, you don't
- * need to call the {@link Effect.reevaluate} or {@link Effect.forceRerun} methods manually.
+ * need to call the {@link Effect.reevaluate} or {@link Effect.recompute} methods manually.
  *
  * Alternatively, you can also provide a {@link EffectOptions.scheduler} object to determine when the effects need to be
  * executed. The scheduler is an asynchronous iterable or iterator that is used to determine when the effect should run.
@@ -75,33 +76,33 @@ export class Effect implements SignalSink {
 	 * @param options - Optional configuration for the effect.
 	 * @returns The created {@link Effect} instance.
 	 */
-	static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): Effect {
+	public static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): Effect {
 		const { controller, stream: scheduler } = createReadableStreamWithController<void>();
 		const effect = new Effect(callbackfn, { ...options, scheduler });
 		effect.events.on('dirty', options?.signal ? { signal: options.signal } : {}, () => controller.enqueue());
 		return effect;
 	}
 
-	constructor(private readonly callbackfn: () => unknown, { signal, lazy = false, scheduler }: EffectOptions = {}) {
+	public constructor(private readonly callbackfn: () => unknown, { signal, lazy = false, scheduler }: EffectOptions = {}) {
 		signal?.addEventListener('abort', () => this.dispose());
 		if (!lazy) {
-			this.forceRerun();
+			this.recompute();
 		}
 		if (scheduler) {
-			const ireator = Symbol.asyncIterator in scheduler
+			const iterator = Symbol.asyncIterator in scheduler
 				? scheduler[Symbol.asyncIterator]()
 				: scheduler;
-			this.schedule(ireator).then(() => this.dispose());
+			this.schedule(iterator).then(() => this.dispose());
 		}
 	}
 
-	#dirty = true;
-	#eventsController = new SignalController<{
+	private _dirty = true;
+	private _eventsController = new SignalController<{
 		dirty(): void;
 		clean(): void;
 	}>();
-	#abortController: AbortController|undefined = undefined;
-	readonly events = this.#eventsController.emitter;
+	private _abortController: AbortController|undefined = undefined;
+	public readonly events = this._eventsController.emitter;
 
 	/**
 	 * Indicates whether the effect is dirty, meaning that one or more of its dependencies have changed since the last
@@ -109,11 +110,11 @@ export class Effect implements SignalSink {
 	 *
 	 * If the effect is not dirty, it means that it has already been executed and is up to date with its dependencies.
 	 */
-	get dirty(): boolean {
-		return this.#dirty;
+	public get dirty(): boolean {
+		return this._dirty;
 	}
 
-	private async schedule(scheduler: AsyncIterator<unknown>): Promise<void> {
+	private async schedule(scheduler: globalThis.AsyncIterator<unknown>): Promise<void> {
 		for (let done: boolean; { done = false } = await scheduler.next(), !done;) {
 			this.reevaluate();
 		}
@@ -123,9 +124,9 @@ export class Effect implements SignalSink {
 	 * Reevaluates the effect if it is dirty. If the effect is dirty, the effect is executed synchronously and the
 	 * effect is marked as clean. If the effect is not dirty, nothing happens.
 	 */
-	reevaluate(): void {
-		if (this.#dirty) {
-			this.forceRerun();
+	public reevaluate(): void {
+		if (this._dirty) {
+			this.recompute();
 		}
 	}
 
@@ -137,45 +138,47 @@ export class Effect implements SignalSink {
 	 *
 	 * @throws {Error} If the effect has been disposed, calling this method will throw an error.
 	 */
-	forceRerun(): void {
+	public recompute(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
-		SignalSource.events.on('usage', { signal: controller.signal }, source => dependencies.add(source));
+		SignalSource.observeUsages({ signal: controller.signal })
+			.on('usage', source => dependencies.add(source));
 		try {
 			this.callbackfn();
 		} finally {
 			controller.abort();
-			this.#dirty = false;
-			this.#setDependencies(Iterator.from(dependencies).toArray());
-			this.#eventsController.emit('clean');
+			this._dirty = false;
+			this._setDependencies(Array.from(dependencies));
+			this._eventsController.emit('clean');
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
-		this.#abortController?.abort();
+	private _setDependencies(dependencies: SignalSource[]) {
+		this._abortController?.abort();
 		if (!dependencies.length) {
-			this.#abortController = undefined;
+			this._abortController = undefined;
 			return;
 		}
-		this.#abortController = new AbortController();
+		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.on('change', { signal: this.#abortController.signal }, () => {
-				this.#abortController?.abort();
-				if (!this.dirty) {
-					this.#dirty = true;
-					this.#eventsController.emit('dirty');
-				}
-			});
+			AsyncIterator.from(dependency.observe(this._abortController.signal))
+				.forEach(() => {
+					this._abortController?.abort();
+					if (!this.dirty) {
+						this._dirty = true;
+						this._eventsController.emit('dirty');
+					}
+				});
 		}
 	}
 
-	[Symbol.dispose]() {
+	public [Symbol.dispose]() {
 		this.dispose();
 	}
 
-	dispose(): void {
-		this.#dirty = false;
-		this.#eventsController.destroy();
-		this.#setDependencies([]);
+	public dispose(): void {
+		this._dirty = false;
+		this._eventsController.destroy();
+		this._setDependencies([]);
 	}
 }

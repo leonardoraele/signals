@@ -46,7 +46,7 @@ describe('effect', () => {
 		const fn = vi.fn();
 		const effect = new Effect(fn);
 		expect(fn).toHaveBeenCalledTimes(1);
-		effect.forceRerun();
+		effect.recompute();
 		expect(fn).toHaveBeenCalledTimes(2);
 	});
 

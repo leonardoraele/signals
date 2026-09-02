@@ -7,6 +7,6 @@ export interface SignalSink {
 	}>;
 	readonly dirty: boolean;
 
-	forceRerun(): void;
+	recompute(): void;
 	dispose(): void;
 }

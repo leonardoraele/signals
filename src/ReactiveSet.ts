@@ -16,6 +16,10 @@ export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalSour
 		return this._eventController.emitter;
 	}
 
+	public async *observe(_signal?: AbortSignal): AsyncIterator<unknown> {
+		// TODO
+	}
+
 	override get size(): number {
 		SignalSource.notifyUsage(this);
 		return super.size;

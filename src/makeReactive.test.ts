@@ -31,8 +31,8 @@ describe('reactive proxy', () => {
 			const proxy = makeReactive(obj, { deep: true });
 			const doubleA = new Computed(() => proxy.a * 2);
 			const doubleB = new Computed(() => proxy.b * 2);
-			doubleA.forceRerun(); // Force clean for this test
-			doubleB.forceRerun(); // Force clean for this test
+			doubleA.recompute(); // Force clean for this test
+			doubleB.recompute(); // Force clean for this test
 			proxy.a = 3;
 			expect(doubleA.dirty).toBe(true);
 			expect(doubleB.dirty).toBe(false);
@@ -260,8 +260,8 @@ describe('reactive proxy', () => {
 			const proxy = makeReactive(obj, { atomic: true });
 			const doubleA = new Computed(() => proxy.a * 2);
 			const doubleB = new Computed(() => proxy.b * 2);
-			doubleA.forceRerun(); // Force clean for this test
-			doubleB.forceRerun(); // Force clean for this test
+			doubleA.recompute(); // Force clean for this test
+			doubleB.recompute(); // Force clean for this test
 			proxy.a = 3;
 			expect(doubleA.dirty).toBe(true);
 			expect(doubleB.dirty).toBe(true);
