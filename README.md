@@ -24,12 +24,12 @@ npm install @leonardoraele/signals
 
 ### State
 
-A `State` is a wrapper over a value, and it emites events when the value changes.
+A State is a wrapper over a value, and it emites events when the value changes.
 
 ```js
-import { State } from '@leonardoraele/signals';
+import { SignalState } from '@leonardoraele/signals';
 
-const state = new State(1);
+const state = new SignalState(1);
 
 console.log(state.value); // 1
 
@@ -45,10 +45,10 @@ state.value = 2; // { newValue: 2, oldValue: 1 }
 Create computed states by combining one or more other states. Computed states are automatically updated when their dependencies change. The function runs lazily, only when the `value` property is accessed.
 
 ```js
-import { State, Computed } from '@leonardoraele/signals';
+import { SignalState, SignalComputed } from '@leonardoraele/signals';
 
-const state = new State(2);
-const computed = new Computed(() => state.value * 2);
+const state = new SignalState(2);
+const computed = new SignalComputed(() => state.value * 2);
 
 console.log(computed.value); // 4
 
@@ -60,9 +60,9 @@ console.log(computed.value); // 6
 You can also create computed states that depend on other computed states.
 
 ```js
-const state = new State(2);
-const double = new Computed(() => state.value * 2);
-const textValue = new Computed(() => String(double.value));
+const state = new SignalState(2);
+const double = new SignalComputed(() => state.value * 2);
+const textValue = new SignalComputed(() => String(double.value));
 ```
 
 ### Effects
@@ -70,10 +70,10 @@ const textValue = new Computed(() => String(double.value));
 Effects are functions that automatically track change of the values they depend on. When the value of a dependency changes, it is said that the effect becomes *dirty*.
 
 ```js
-import { State, Effect } from '@leonardoraele/signals';
+import { SignalState, SignalEffect } from '@leonardoraele/signals';
 
-const message = new State('Signals are cool');
-const effect = new Effect(() => console.log(message.value)); // Prints the message immediately
+const message = new SignalState('Signals are cool');
+const effect = new SignalEffect(() => console.log(message.value)); // Prints the message immediately
 
 // Later on, call `effect.reevaluate()` and the effect function will rerun
 // only if the effect is dirty.
@@ -86,11 +86,11 @@ effect.reevaluate(); // Prints the current value of `message`, if it has changed
 effect.events.on('dirty', () => console.log(message.value)); // Prints the new message immediately when it changes.
 ```
 
-Alternatively, if you want the effect to run immediately, you can use the `Effect.createImmediate` function:
+Alternatively, if you want the effect to run immediately, you can use the `SignalEffect.createImmediate` function:
 
 ```js
 const message = new State('Signals are cool');
-Effect.createImmediate(() => console.log(message.value)); // Reruns whenever the message changes, asynchronously.
+SignalEffect.createImmediate(() => console.log(message.value)); // Reruns whenever the message changes, asynchronously.
 ```
 
 ## API Reference
