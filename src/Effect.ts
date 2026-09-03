@@ -140,7 +140,7 @@ export class Effect implements SignalSink {
 	forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
-		SignalSource.events.on('usage', { signal: controller.signal }, source => dependencies.add(source));
+		SignalSource.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
 		try {
 			this.callbackfn();
 		} finally {

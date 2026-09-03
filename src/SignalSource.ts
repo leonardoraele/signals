@@ -8,12 +8,24 @@ export interface SignalSource {
 }
 
 export namespace SignalSource {
-	const controller = new SignalController<{
+	const controllers: SignalController<{
 		usage(source: SignalSource): void;
-	}>();
-	export const events = controller.emitter;
+	}>[] = [];
+
+	export function listen({ signal = undefined as AbortSignal | undefined } = {}): SignalEmitter<{
+		usage(source: SignalSource): void;
+	}> {
+		const controller = new SignalController<{
+			usage(source: SignalSource): void;
+		}>();
+		controllers.push(controller);
+		signal?.addEventListener('abort', () => {
+			controllers.splice(controllers.indexOf(controller), 1);
+		});
+		return controller.emitter;
+	}
 
 	export function notifyUsage(source: SignalSource) {
-		controller.emit('usage', source);
+		controllers.at(-1)?.emit('usage', source);
 	}
 }
