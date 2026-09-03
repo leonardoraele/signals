@@ -1,22 +1,22 @@
 import { SignalController, SignalEmitter } from 'signal-controller';
 
-export interface SignalSource {
+export interface SignalProducer {
 	// readonly value: T;
 	readonly events: SignalEmitter<{
 		change(): void;
 	}>;
 }
 
-export namespace SignalSource {
+export namespace SignalProducer {
 	const controllers: SignalController<{
-		usage(source: SignalSource): void;
+		usage(source: SignalProducer): void;
 	}>[] = [];
 
 	export function listen({ signal = undefined as AbortSignal | undefined } = {}): SignalEmitter<{
-		usage(source: SignalSource): void;
+		usage(source: SignalProducer): void;
 	}> {
 		const controller = new SignalController<{
-			usage(source: SignalSource): void;
+			usage(source: SignalProducer): void;
 		}>();
 		controllers.push(controller);
 		signal?.addEventListener('abort', () => {
@@ -25,7 +25,7 @@ export namespace SignalSource {
 		return controller.emitter;
 	}
 
-	export function notifyUsage(source: SignalSource) {
+	export function notifyUsage(source: SignalProducer) {
 		controllers.at(-1)?.emit('usage', source);
 	}
 }

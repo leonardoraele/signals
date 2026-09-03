@@ -8,9 +8,9 @@ import { ReactiveBox } from '../ReactiveBox.js';
 export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const signal = new ReactiveBox<T>(state);
-		signal.events.on('change', newValue => setState(newValue));
-		return signal;
+		const box = new ReactiveBox<T>(state);
+		box.events.on('change', newValue => setState(newValue));
+		return box;
 	}, []);
 }
 

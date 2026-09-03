@@ -1,8 +1,8 @@
 import { SignalController } from 'signal-controller';
-import { SignalSource } from './SignalSource.js';
-import { SignalSink } from './SignalSink.js';
+import { SignalProducer } from './SignalProducer.js';
+import { SignalConsumer } from './SignalConsumer.js';
 
-export class Computed<T = unknown> implements SignalSource, SignalSink {
+export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 	constructor(
 		private readonly callbackfn: () => T,
 	) {}
@@ -21,7 +21,7 @@ export class Computed<T = unknown> implements SignalSource, SignalSink {
 		if (this.#dirty) {
 			this.forceRerun();
 		}
-		SignalSource.notifyUsage(this);
+		SignalProducer.notifyUsage(this);
 		return this.#value;
 	}
 
@@ -31,8 +31,8 @@ export class Computed<T = unknown> implements SignalSource, SignalSink {
 
 	forceRerun(): void {
 		const controller = new AbortController();
-		const dependencies = new Set<SignalSource>();
-		SignalSource.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
+		const dependencies = new Set<SignalProducer>();
+		SignalProducer.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
 		try {
 			this.#value = this.callbackfn();
 			this.#dirty = false;
@@ -43,7 +43,7 @@ export class Computed<T = unknown> implements SignalSource, SignalSink {
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
+	#setDependencies(dependencies: SignalProducer[]) {
 		this.#abortController?.abort();
 		if (!dependencies.length) {
 			this.#abortController = undefined;

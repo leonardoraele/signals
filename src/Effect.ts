@@ -1,6 +1,6 @@
 import { SignalController } from 'signal-controller';
-import { SignalSource } from './SignalSource.js';
-import { SignalSink } from './SignalSink.js';
+import { SignalProducer } from './SignalProducer.js';
+import { SignalConsumer } from './SignalConsumer.js';
 import { createReadableStreamWithController } from './util/stream.js';
 
 export interface EffectOptions {
@@ -61,7 +61,7 @@ export interface EffectOptions {
  * to listen for changes in its dependencies indefinitely. You can also provide an {@link AbortSignal} when you create
  * the effect, and the effect will be automatically disposed when the signal is triggered.
  */
-export class Effect implements SignalSink {
+export class Effect implements SignalConsumer {
 	/**
 	 * Creates an {@link Effect} that is executed immediately whenever any of its dependencies change.
 	 *
@@ -139,8 +139,8 @@ export class Effect implements SignalSink {
 	 */
 	forceRerun(): void {
 		const controller = new AbortController();
-		const dependencies = new Set<SignalSource>();
-		SignalSource.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
+		const dependencies = new Set<SignalProducer>();
+		SignalProducer.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
 		try {
 			this.callbackfn();
 		} finally {
@@ -151,7 +151,7 @@ export class Effect implements SignalSink {
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
+	#setDependencies(dependencies: SignalProducer[]) {
 		this.#abortController?.abort();
 		if (!dependencies.length) {
 			this.#abortController = undefined;

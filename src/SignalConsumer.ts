@@ -1,6 +1,6 @@
 import { SignalEmitter } from 'signal-controller';
 
-export interface SignalSink {
+export interface SignalConsumer {
 	readonly events: SignalEmitter<{
 		dirty(): void;
 		clean(): void;
