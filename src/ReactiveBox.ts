@@ -38,19 +38,27 @@ export class ReactiveBox<T = unknown> implements SignalProducer {
 		}
 	}
 
-	async *toIterator(signal?: AbortSignal): AsyncGenerator<T> {
-		for (let value: T = this.#value;;) {
-			yield value;
+	async *observe(signal: AbortSignal): AsyncGenerator<T> {
+		yield this.value;
+		while (!signal.aborted) {
+			let resolve: (value: T | PromiseLike<T>) => void;
+			let reject: (reason?: any) => void;
 			try {
-				value = await new Promise<T>((resolve, reject) => {
-					this.events.on('change', { once: true, ...signal ? { signal } : undefined }, resolve);
-					signal?.addEventListener('abort', () => reject(ReactiveBox.#ABORT_ITERATION_SYMBOL));
+				await new Promise<T>((_resolve, _reject) => {
+					resolve = _resolve;
+					reject = _reject;
+					this.events.on('change', resolve);
+					signal.addEventListener('abort', reject);
 				});
+				yield this.value;
 			} catch (error) {
-				if (error === ReactiveBox.#ABORT_ITERATION_SYMBOL) {
+				if (signal.aborted) {
 					break;
 				}
 				throw error;
+			} finally {
+				this.events.off('change', resolve!);
+				signal.removeEventListener('abort', reject!);
 			}
 		}
 	}
