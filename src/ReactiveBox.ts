@@ -8,7 +8,6 @@ import { SignalProducer } from './SignalProducer.js';
  * You can optionally provide a custom equality comparer function to determine whether two values are considered equal.
  */
 export class ReactiveBox<T = unknown> implements SignalProducer {
-	static readonly #ABORT_ITERATION_SYMBOL = Symbol();
 	static readonly #DEFAULT_EQUALITY_COMPARER: EqualityComparer<unknown> = (a, b) => a === b;
 
 	constructor(initialValue: T, private readonly options?: StateOptions<T>) {
