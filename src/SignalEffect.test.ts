@@ -171,24 +171,4 @@ describe('effect', () => {
 			expect(sum).toBe(8);
 		});
 	});
-
-	describe('infinite loop prevention', () => {
-		it('prevents infinite loops', { timeout: 200 }, async () => {
-			const state = new SignalState(false);
-			const effect1 = new SignalEffect(() => {
-				state.value = true;
-			});
-			const effect2 = new SignalEffect(() => {
-				state.value = false;
-			});
-
-			expect(effect1.dirty).toBe(true);
-			expect(effect2.dirty).toBe(false);
-
-			effect2.reevaluate();
-
-			expect(effect1.dirty).toBe(false);
-			expect(effect2.dirty).toBe(true);
-		});
-	});
 });

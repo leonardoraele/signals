@@ -76,16 +76,23 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 
 	public override getOrInsert(key: K, defaultValue: V): V {
 		SignalSource.notifyUsage(this);
-		const result = super.getOrInsert(key, defaultValue);
+		if (super.has(key)) {
+			return super.get(key)!;
+		}
+		super.set(key, defaultValue);
 		this.notifyChange();
-		return result;
+		return defaultValue;
 	}
 
 	public override getOrInsertComputed(key: K, callback: (key: K) => V): V {
 		SignalSource.notifyUsage(this);
-		const result = super.getOrInsertComputed(key, callback);
+		if (super.has(key)) {
+			return super.get(key)!;
+		}
+		const value = callback(key);
+		super.set(key, value);
 		this.notifyChange();
-		return result;
+		return value;
 	}
 
 	public override [Symbol.iterator](): MapIterator<[K, V]> {

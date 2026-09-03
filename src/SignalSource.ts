@@ -5,6 +5,8 @@ export interface SignalSource/*<T = unknown>*/ {
 	readonly events: EventEmitter<{
 		change(): void;
 	}>;
+	// notifyUsage(): void;
+	// notifyChange(): void;
 }
 
 export namespace SignalSource {

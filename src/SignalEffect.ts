@@ -1,7 +1,6 @@
 import { EventController } from '@leonardoraele/event-controller';
 import { SignalSource } from './SignalSource.js';
 import { SignalSink } from './SignalSink.js';
-import { createReadableStreamWithController } from './util/stream.js';
 
 export interface EffectOptions {
 	/**
@@ -76,9 +75,8 @@ export class SignalEffect implements SignalSink {
 	 * @returns The created {@link SignalEffect} instance.
 	 */
 	public static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): SignalEffect {
-		const { controller, stream: scheduler } = createReadableStreamWithController<void>();
-		const effect = new SignalEffect(callbackfn, { ...options, scheduler });
-		effect.events.addEventListener('dirty', () => controller.enqueue(), { signal: options?.signal });
+		const effect = new SignalEffect(callbackfn, options);
+		effect.events.addEventListener('dirty', () => queueMicrotask(() => effect.reevaluate()));
 		return effect;
 	}
 
@@ -88,10 +86,10 @@ export class SignalEffect implements SignalSink {
 			this.forceRerun();
 		}
 		if (scheduler) {
-			const ireator = Symbol.asyncIterator in scheduler
+			const iterator = Symbol.asyncIterator in scheduler
 				? scheduler[Symbol.asyncIterator]()
 				: scheduler;
-			this.schedule(ireator).then(() => this.dispose());
+			this.schedule(iterator).then(() => this.dispose());
 		}
 	}
 
