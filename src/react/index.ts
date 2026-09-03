@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Computed } from '../Computed.js';
-import { Effect } from '../Effect.js';
-import { ReactiveBox } from '../ReactiveBox.js';
+import { SignalComputed } from '../SignalComputed.js';
+import { SignalEffect } from '../SignalEffect.js';
+import { SignalState } from '../SignalState.js';
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
+export function useReactiveBox<T>(initialValue: T|(() => T)): SignalState<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const box = new ReactiveBox<T>(state);
+		const box = new SignalState<T>(state);
 		box.events.addEventListener('change', newValue => setState(newValue));
 		return box;
 	}, []);
@@ -22,7 +22,7 @@ export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
  * recalculated whenever any of the dependencies change.
  */
 export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []): T {
-	const computed = useMemo(() => new Computed(callbackfn), deps);
+	const computed = useMemo(() => new SignalComputed(callbackfn), deps);
 	const subscribe = (callback: () => unknown) => {
 		computed.events.addEventListener('dirty', callback);
 		return () => computed.events.removeEventListener('dirty', callback);
@@ -39,7 +39,7 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []):
  * dependencies changes after a rerender, the effect is re-evaluated.
  */
 export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): void {
-	const effect = useMemo(() => new Effect(callbackfn, { lazy: true }), deps);
+	const effect = useMemo(() => new SignalEffect(callbackfn, { lazy: true }), deps);
 	useEffect(() => {
 		effect.events.addEventListener('dirty', () => queueMicrotask(() => effect.reevaluate()));
 		return () => effect.dispose();

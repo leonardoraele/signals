@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { Computed } from './Computed';
+import { SignalComputed } from './SignalComputed';
 import { ReactiveMap } from './ReactiveMap';
 
 describe(ReactiveMap.name, () => {
 	it('works', () => {
 		const map = new ReactiveMap<string, number>([['a', 1], ['b', 2], ['c', 3]]);
-		const size = new Computed(() => map.size);
-		const sum = new Computed(() => map.values().reduce((a, b) => a + b, 0));
-		const keys = new Computed(() => map.keys().toArray().sort());
+		const size = new SignalComputed(() => map.size);
+		const sum = new SignalComputed(() => map.values().reduce((a, b) => a + b, 0));
+		const keys = new SignalComputed(() => map.keys().toArray().sort());
 
 		// { a: 1, b: 2, c: 3 }
 		expect(size.value).toBe(3);

@@ -1,8 +1,8 @@
 import { EventController } from '@leonardoraele/event-controller';
-import { SignalProducer } from './SignalProducer.js';
-import { SignalConsumer } from './SignalConsumer.js';
+import { SignalSource } from './SignalSource.js';
+import { SignalSink } from './SignalSink.js';
 
-export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
+export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
 	constructor(
 		private readonly callbackfn: () => T,
 	) {}
@@ -21,7 +21,7 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 		if (this.#dirty) {
 			this.forceRerun();
 		}
-		SignalProducer.notifyUsage(this);
+		SignalSource.notifyUsage(this);
 		return this.#value;
 	}
 
@@ -31,8 +31,8 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 
 	forceRerun(): void {
 		const controller = new AbortController();
-		const dependencies = new Set<SignalProducer>();
-		SignalProducer.listen({ signal: controller.signal })
+		const dependencies = new Set<SignalSource>();
+		SignalSource.listen({ signal: controller.signal })
 			.addEventListener('usage', source => dependencies.add(source));
 		try {
 			this.#value = this.callbackfn();
@@ -44,7 +44,7 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 		}
 	}
 
-	#setDependencies(dependencies: SignalProducer[]) {
+	#setDependencies(dependencies: SignalSource[]) {
 		this.#abortController?.abort();
 		if (!dependencies.length) {
 			this.#abortController = undefined;

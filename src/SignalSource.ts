@@ -1,22 +1,22 @@
 import { EventController, EventEmitter } from '@leonardoraele/event-controller';
 
-export interface SignalProducer {
-	// readonly value: T;
+export interface SignalSource<T = unknown> {
+	readonly value: T;
 	readonly events: EventEmitter<{
 		change(): void;
 	}>;
 }
 
-export namespace SignalProducer {
+export namespace SignalSource {
 	const controllers: EventController<{
-		usage(source: SignalProducer): void;
+		usage(source: SignalSource): void;
 	}>[] = [];
 
 	export function listen({ signal = undefined as AbortSignal | undefined } = {}): EventEmitter<{
-		usage(source: SignalProducer): void;
+		usage(source: SignalSource): void;
 	}> {
 		const controller = new EventController<{
-			usage(source: SignalProducer): void;
+			usage(source: SignalSource): void;
 		}>();
 		controllers.push(controller);
 		signal?.addEventListener('abort', () => {
@@ -25,7 +25,7 @@ export namespace SignalProducer {
 		return controller.emitter;
 	}
 
-	export function notifyUsage(source: SignalProducer) {
+	export function notifyUsage(source: SignalSource) {
 		controllers.at(-1)?.emit('usage', source);
 	}
 }

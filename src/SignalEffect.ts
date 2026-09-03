@@ -1,19 +1,19 @@
 import { EventController } from '@leonardoraele/event-controller';
-import { SignalProducer } from './SignalProducer.js';
-import { SignalConsumer } from './SignalConsumer.js';
+import { SignalSource } from './SignalSource.js';
+import { SignalSink } from './SignalSink.js';
 import { createReadableStreamWithController } from './util/stream.js';
 
 export interface EffectOptions {
 	/**
 	 * An {@link AbortSignal} that can be used to automatically dispose the effect when the signal is triggered. If you
-	 * do not provide an {@link AbortSignal}, you must call {@link Effect.dispose} manually to clean up the effect when
+	 * do not provide an {@link AbortSignal}, you must call {@link SignalEffect.dispose} manually to clean up the effect when
 	 * it is no longer needed, otherwise it will continue to listen for changes in its dependencies indefinitely.
 	 */
 	signal?: AbortSignal | undefined;
 
 	/**
 	 * By default, the effect is immediately, and synchronously, executed when it is created. If you set this option to
-	 * true, the effect will not be executed until you call the {@link Effect.reevaluate} or {@link Effect.forceRerun}
+	 * true, the effect will not be executed until you call the {@link SignalEffect.reevaluate} or {@link SignalEffect.forceRerun}
 	 * methods manually. (or the scheduler determines it should, if you provided one)
 	 *
 	 * @remarks
@@ -39,45 +39,45 @@ export interface EffectOptions {
 }
 
 /**
- * An {@link Effect} is a reactive procedure that is executed if its dependencies change. It can be used to perform side
+ * An {@link SignalEffect} is a reactive procedure that is executed if its dependencies change. It can be used to perform side
  * effects in response to changes in reactive state.
  *
  * @remarks
  *
  * You have control over when the effect is executed. By default, the effect is not executed automatically when changes
- * are detected. You can check if the effect needs to be executed by checking the {@link Effect.dirty} property, and you
- * can run the effect by calling the {@link Effect.reevaluate} or {@link Effect.forceRerun} methods.
+ * are detected. You can check if the effect needs to be executed by checking the {@link SignalEffect.dirty} property, and you
+ * can run the effect by calling the {@link SignalEffect.reevaluate} or {@link SignalEffect.forceRerun} methods.
  *
  * To have the effect executed automatically whenever any of its dependencies change, you can create the effect by
- * calling the static {@link Effect.createImmediate} method instead of this class' constructor. In this case, you don't
- * need to call the {@link Effect.reevaluate} or {@link Effect.forceRerun} methods manually.
+ * calling the static {@link SignalEffect.createImmediate} method instead of this class' constructor. In this case, you don't
+ * need to call the {@link SignalEffect.reevaluate} or {@link SignalEffect.forceRerun} methods manually.
  *
  * Alternatively, you can also provide a {@link EffectOptions.scheduler} object to determine when the effects need to be
  * executed. The scheduler is an asynchronous iterable or iterator that is used to determine when the effect should run.
  * Whenever the scheduler yields a value, the effect will be executed. The effect will be automatically disposed if the
  * effect ends, and the scheduler will be aborted if the effect is disposed earlier.
  *
- * You must call {@link Effect.dispose} to clean up the effect when it is no longer needed, otherwise it will continue
+ * You must call {@link SignalEffect.dispose} to clean up the effect when it is no longer needed, otherwise it will continue
  * to listen for changes in its dependencies indefinitely. You can also provide an {@link AbortSignal} when you create
  * the effect, and the effect will be automatically disposed when the signal is triggered.
  */
-export class Effect implements SignalConsumer {
+export class SignalEffect implements SignalSink {
 	/**
-	 * Creates an {@link Effect} that is executed immediately whenever any of its dependencies change.
+	 * Creates an {@link SignalEffect} that is executed immediately whenever any of its dependencies change.
 	 *
 	 * @remarks
 	 *
 	 * The effect will be automatically disposed when the provided {@link AbortSignal} is triggered, if any. If you not
-	 * provide an {@link AbortSignal}, you must call {@link Effect.dispose} manually to clean up the effect when it is
+	 * provide an {@link AbortSignal}, you must call {@link SignalEffect.dispose} manually to clean up the effect when it is
 	 * no longer needed, otherwise it will continue to listen for changes in its dependencies indefinitely.
 	 *
 	 * @param callbackfn - The callback function to be executed whenever the effect is run.
 	 * @param options - Optional configuration for the effect.
-	 * @returns The created {@link Effect} instance.
+	 * @returns The created {@link SignalEffect} instance.
 	 */
-	static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): Effect {
+	static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): SignalEffect {
 		const { controller, stream: scheduler } = createReadableStreamWithController<void>();
-		const effect = new Effect(callbackfn, { ...options, scheduler });
+		const effect = new SignalEffect(callbackfn, { ...options, scheduler });
 		effect.events.addEventListener('dirty', () => controller.enqueue(), { signal: options?.signal });
 		return effect;
 	}
@@ -139,8 +139,8 @@ export class Effect implements SignalConsumer {
 	 */
 	forceRerun(): void {
 		const controller = new AbortController();
-		const dependencies = new Set<SignalProducer>();
-		SignalProducer.listen({ signal: controller.signal })
+		const dependencies = new Set<SignalSource>();
+		SignalSource.listen({ signal: controller.signal })
 			.addEventListener('usage', source => dependencies.add(source));
 		try {
 			this.callbackfn();
@@ -152,7 +152,7 @@ export class Effect implements SignalConsumer {
 		}
 	}
 
-	#setDependencies(dependencies: SignalProducer[]) {
+	#setDependencies(dependencies: SignalSource[]) {
 		this.#abortController?.abort();
 		if (!dependencies.length) {
 			this.#abortController = undefined;

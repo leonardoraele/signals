@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeReactive, isReactiveProxy, unwrapReactiveProxy, unmakeReactive } from './makeReactive';
-import { Computed } from './Computed';
+import { SignalComputed } from './SignalComputed';
 
 describe('reactive proxy', () => {
 	describe('property reactivity', () => {
 		it('should notify changes on property set', () => {
 			const obj = { a: 1 };
 			const proxy = makeReactive(obj, { deep: true });
-			const doubleA = new Computed(() => proxy.a * 2);
+			const doubleA = new SignalComputed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
 			proxy.a = 3;
@@ -18,7 +18,7 @@ describe('reactive proxy', () => {
 		it('should notify changes on property delete', () => {
 			const obj = { a: 1 } as { a?: number };
 			const proxy = makeReactive(obj, { deep: true });
-			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
+			const doubleA = new SignalComputed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
 			delete proxy.a;
@@ -29,8 +29,8 @@ describe('reactive proxy', () => {
 		it('should notify changes to individual properties separately', () => {
 			const obj = { a: 1, b: 2 };
 			const proxy = makeReactive(obj, { deep: true });
-			const doubleA = new Computed(() => proxy.a * 2);
-			const doubleB = new Computed(() => proxy.b * 2);
+			const doubleA = new SignalComputed(() => proxy.a * 2);
+			const doubleB = new SignalComputed(() => proxy.b * 2);
 			doubleA.forceRerun(); // Force clean for this test
 			doubleB.forceRerun(); // Force clean for this test
 			proxy.a = 3;
@@ -57,7 +57,7 @@ describe('reactive proxy', () => {
 			});
 
 			it('works with for..in loop', () => {
-				const entries = new Computed(() => function*() {
+				const entries = new SignalComputed(() => function*() {
 					for (const key in proxy) {
 						yield [key, proxy[key]];
 					}
@@ -68,7 +68,7 @@ describe('reactive proxy', () => {
 			});
 
 			it('works with for..of loop', () => {
-				const values = new Computed(() => function*() {
+				const values = new SignalComputed(() => function*() {
 					for (const value of Object.values(proxy)) {
 						yield value;
 					}
@@ -79,21 +79,21 @@ describe('reactive proxy', () => {
 			});
 
 			it('works with Object.keys', () => {
-				const keys = new Computed(() => Object.keys(proxy));
+				const keys = new SignalComputed(() => Object.keys(proxy));
 				expect(keys.value).toEqual(['a', 'b']);
 				proxy.c = 3;
 				expect(keys.value).toEqual(['a', 'b', 'c']);
 			});
 
 			it('works with Object.values', () => {
-				const values = new Computed(() => Object.values(proxy));
+				const values = new SignalComputed(() => Object.values(proxy));
 				expect(values.value).toEqual([1, 2]);
 				proxy.c = 3;
 				expect(values.value).toEqual([1, 2, 3]);
 			});
 
 			it('works with Object.entries', () => {
-				const entries = new Computed(() => Object.entries(proxy));
+				const entries = new SignalComputed(() => Object.entries(proxy));
 				expect(entries.value).toEqual([['a', 1], ['b', 2]]);
 				proxy.c = 3;
 				expect(entries.value).toEqual([['a', 1], ['b', 2], ['c', 3]]);
@@ -103,20 +103,20 @@ describe('reactive proxy', () => {
 		describe('reactive arrays', () => {
 			let arr: number[];
 			let proxy: number[];
-			let len: Computed<number>;
-			let set: Computed<Set<number>>;
-			let sum: Computed<number>;
-			let sec: Computed<number|undefined>;
-			let last: Computed<number|undefined>;
+			let len: SignalComputed<number>;
+			let set: SignalComputed<Set<number>>;
+			let sum: SignalComputed<number>;
+			let sec: SignalComputed<number|undefined>;
+			let last: SignalComputed<number|undefined>;
 
 			beforeEach(() => {
 				arr = [0, 1, 2, 3, 4];
 				proxy = makeReactive(arr, { deep: true });
-				len = new Computed(() => proxy.length);
-				set = new Computed(() => new Set(proxy));
-				sum = new Computed(() => proxy.reduce((acc, val) => acc + val, 0));
-				sec = new Computed(() => proxy[1]);
-				last = new Computed(() => proxy[proxy.length - 1]);
+				len = new SignalComputed(() => proxy.length);
+				set = new SignalComputed(() => new Set(proxy));
+				sum = new SignalComputed(() => proxy.reduce((acc, val) => acc + val, 0));
+				sec = new SignalComputed(() => proxy[1]);
+				last = new SignalComputed(() => proxy[proxy.length - 1]);
 			});
 
 			it('should compute the sum and set correctly', () => {
@@ -205,7 +205,7 @@ describe('reactive proxy', () => {
 		it('should unwrap reactive proxy', () => {
 			const obj = { a: 1 } as { a?: number };
 			const proxy = makeReactive(obj, { deep: true });
-			const doubleA = new Computed(() => 'a' in proxy ? proxy.a * 2 : 0);
+			const doubleA = new SignalComputed(() => 'a' in proxy ? proxy.a * 2 : 0);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
 			const unwrapped = unwrapReactiveProxy(proxy);
@@ -220,7 +220,7 @@ describe('reactive proxy', () => {
 		it('should not observe nested objects when shallow option is set', () => {
 			const obj = { a: { b: 2 } };
 			const proxy = makeReactive(obj);
-			const doubleAB = new Computed(() => proxy.a.b * 2);
+			const doubleAB = new SignalComputed(() => proxy.a.b * 2);
 			expect(doubleAB.value).toBe(4);
 			expect(isReactiveProxy(proxy.a)).toBe(false);
 			proxy.a.b = 3;
@@ -240,7 +240,7 @@ describe('reactive proxy', () => {
 		it('should make a reactive reactive object not reactive', () => {
 			const obj = { a: 1 };
 			const proxy = makeReactive(obj, { deep: true });
-			const doubleA = new Computed(() => proxy.a * 2);
+			const doubleA = new SignalComputed(() => proxy.a * 2);
 			expect(doubleA.value).toBe(2);
 			expect(doubleA.dirty).toBe(false);
 			const unreactive = unmakeReactive(proxy);
@@ -258,8 +258,8 @@ describe('reactive proxy', () => {
 		it('should treat the entire object as a single unit when atomic option is set', () => {
 			const obj = { a: 1, b: 2 };
 			const proxy = makeReactive(obj, { atomic: true });
-			const doubleA = new Computed(() => proxy.a * 2);
-			const doubleB = new Computed(() => proxy.b * 2);
+			const doubleA = new SignalComputed(() => proxy.a * 2);
+			const doubleB = new SignalComputed(() => proxy.b * 2);
 			doubleA.forceRerun(); // Force clean for this test
 			doubleB.forceRerun(); // Force clean for this test
 			proxy.a = 3;

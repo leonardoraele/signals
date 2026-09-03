@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { ReactiveBox } from './ReactiveBox.js';
-import { Computed } from './Computed.js';
+import { SignalState } from './SignalState.js';
+import { SignalComputed } from './SignalComputed.js';
 
 describe('computed state', () => {
 	it('updates lazily, when dependencies change', () => {
-		const a = new ReactiveBox(2);
-		const b = new ReactiveBox(3);
-		const sum = new Computed(() => a.value + b.value);
-		const doubleSum = new Computed(() => sum.value * 2);
+		const a = new SignalState(2);
+		const b = new SignalState(3);
+		const sum = new SignalComputed(() => a.value + b.value);
+		const doubleSum = new SignalComputed(() => sum.value * 2);
 
 		expect(sum.dirty).toBe(true);
 		expect(sum.value).toBe(5);

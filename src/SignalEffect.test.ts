@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ReactiveBox } from './ReactiveBox.js';
-import { Effect } from './Effect.js';
+import { SignalState } from './SignalState.js';
+import { SignalEffect } from './SignalEffect.js';
 
 describe('effect', () => {
 	it('becomes dirty when dependencies change', () => {
-		const state = new ReactiveBox(0);
-		const effect = new Effect(() => state.value += 1);
+		const state = new SignalState(0);
+		const effect = new SignalEffect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
 		state.value = 0;
@@ -14,8 +14,8 @@ describe('effect', () => {
 	});
 
 	it('runs on reevaluation only if dirty', () => {
-		const state = new ReactiveBox(0);
-		const effect = new Effect(() => state.value += 1);
+		const state = new SignalState(0);
+		const effect = new SignalEffect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
 		effect.reevaluate();
@@ -30,8 +30,8 @@ describe('effect', () => {
 	});
 
 	it('stops tracking dependencies after being disposed', () => {
-		const state = new ReactiveBox(0);
-		const effect = new Effect(() => state.value += 1);
+		const state = new SignalState(0);
+		const effect = new SignalEffect(() => state.value += 1);
 		expect(effect.dirty).toBe(false);
 		expect(state.value).toBe(1);
 		effect.dispose();
@@ -44,7 +44,7 @@ describe('effect', () => {
 
 	it('can be forced by the client to rerun', () => {
 		const fn = vi.fn();
-		const effect = new Effect(fn);
+		const effect = new SignalEffect(fn);
 		expect(fn).toHaveBeenCalledTimes(1);
 		effect.forceRerun();
 		expect(fn).toHaveBeenCalledTimes(2);
@@ -53,12 +53,12 @@ describe('effect', () => {
 	describe('lazy option', () => {
 		it('is eager by default, and runs synchronously at creation', () => {
 			const fn = vi.fn();
-			new Effect(fn);
+			new SignalEffect(fn);
 			expect(fn).toHaveBeenCalled();
 		});
 		it('do not run at creation is set to lazy', () => {
 			const fn = vi.fn();
-			const effect = new Effect(fn, { lazy: true });
+			const effect = new SignalEffect(fn, { lazy: true });
 			expect(effect.dirty).toBe(true);
 			expect(fn).not.toHaveBeenCalled();
 			effect.reevaluate();
@@ -69,8 +69,8 @@ describe('effect', () => {
 
 	describe('createImmediate static function', () => {
 		it('executes immediately', { timeout: 200 }, async () => {
-			const state = new ReactiveBox(1);
-			const effect = Effect.createImmediate(() => state.value *= 2);
+			const state = new SignalState(1);
+			const effect = SignalEffect.createImmediate(() => state.value *= 2);
 			expect(effect.dirty).toBe(false);
 			expect(state.value).toBe(2);
 			state.value = 5;
@@ -92,14 +92,14 @@ describe('effect', () => {
 
 	describe('scheduler option', () => {
 		it('can be used to schedule effect reevaluation', { timeout: 200 }, async () => {
-			const state = new ReactiveBox(1);
+			const state = new SignalState(1);
 			let runCount = 0;
 			const scheduler = new ReadableStream<void>({
 				pull(controller) {
 					setTimeout(() => controller.enqueue(), 100);
 				},
 			});
-			const effect = new Effect(() => {
+			const effect = new SignalEffect(() => {
 				runCount++;
 				state.value *= 2;
 			}, { scheduler });
@@ -137,8 +137,8 @@ describe('effect', () => {
 			const next = () => bus.dispatchEvent(new Event('next'));
 
 			let sum = 0;
-			const addend = new ReactiveBox(0);
-			const effect = new Effect(() => {
+			const addend = new SignalState(0);
+			const effect = new SignalEffect(() => {
 				sum += addend.value;
 				addend.value = 0;
 			}, { scheduler: scheduler as AsyncGenerator<void> });

@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { Computed } from './Computed';
+import { SignalComputed } from './SignalComputed';
 import { ReactiveSet } from './ReactiveSet';
 
 describe(ReactiveSet.name, () => {
 	it('works', () => {
 		const set1 = new ReactiveSet<number>([1, 2, 3]);
 		const set2 = new ReactiveSet<number>([2, 3, 4, 5, 6]);
-		const size1 = new Computed(() => set1.size);
-		const size2 = new Computed(() => set2.size);
-		const sum1 = new Computed(() => set1.values().reduce((a, b) => a + b, 0));
-		const sum2 = new Computed(() => set2.values().reduce((a, b) => a + b, 0));
-		const unique1 = new Computed(() => set1.difference(set2).values().toArray().sort());
-		const unique2 = new Computed(() => set2.difference(set1).values().toArray().sort());
-		const union = new Computed(() => set1.union(set2).values().toArray().sort());
-		const inters = new Computed(() => set1.intersection(set2).values().toArray().sort());
-		const sdiff = new Computed(() => set1.symmetricDifference(set2).values().toArray().sort());
+		const size1 = new SignalComputed(() => set1.size);
+		const size2 = new SignalComputed(() => set2.size);
+		const sum1 = new SignalComputed(() => set1.values().reduce((a, b) => a + b, 0));
+		const sum2 = new SignalComputed(() => set2.values().reduce((a, b) => a + b, 0));
+		const unique1 = new SignalComputed(() => set1.difference(set2).values().toArray().sort());
+		const unique2 = new SignalComputed(() => set2.difference(set1).values().toArray().sort());
+		const union = new SignalComputed(() => set1.union(set2).values().toArray().sort());
+		const inters = new SignalComputed(() => set1.intersection(set2).values().toArray().sort());
+		const sdiff = new SignalComputed(() => set1.symmetricDifference(set2).values().toArray().sort());
 
 		expect(Array.from(set1).sort()).toEqual([1, 2, 3]);
 		expect(Array.from(set2).sort()).toEqual([2, 3, 4, 5, 6]);

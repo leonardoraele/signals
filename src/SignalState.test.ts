@@ -1,16 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ReactiveBox } from './ReactiveBox.js';
+import { SignalState } from './SignalState.js';
 
-describe(ReactiveBox.name, () => {
+describe(SignalState.name, () => {
 	it('is set synchronously', () => {
-		const state = new ReactiveBox(1);
+		const state = new SignalState(1);
 		expect(state.value).toBe(1);
 		state.value = 2;
 		expect(state.value).toBe(2);
 	});
 
 	it('emits events when changed', async () =>{
-		const state = new ReactiveBox(1);
+		const state = new SignalState(1);
 		const fn = vi.fn();
 		state.events.addEventListener('change', fn);
 		state.value = 2;

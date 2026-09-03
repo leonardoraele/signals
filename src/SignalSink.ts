@@ -1,6 +1,6 @@
 import { EventEmitter } from '@leonardoraele/event-controller';
 
-export interface SignalConsumer {
+export interface SignalSink {
 	readonly events: EventEmitter<{
 		dirty(): void;
 		clean(): void;
