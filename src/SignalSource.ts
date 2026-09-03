@@ -1,7 +1,7 @@
 import { EventController, EventEmitter } from '@leonardoraele/event-controller';
 
-export interface SignalSource<T = unknown> {
-	readonly value: T;
+export interface SignalSource/*<T = unknown>*/ {
+	// readonly value: T;
 	readonly events: EventEmitter<{
 		change(): void;
 	}>;
