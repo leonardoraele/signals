@@ -12,7 +12,7 @@ describe(ReactiveBox.name, () => {
 	it('emits events when changed', async () =>{
 		const state = new ReactiveBox(1);
 		const fn = vi.fn();
-		state.events.on('change', fn);
+		state.events.addEventListener('change', fn);
 		state.value = 2;
 		expect(fn).toHaveBeenCalledTimes(1);
 	});

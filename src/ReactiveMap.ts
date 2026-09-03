@@ -1,8 +1,8 @@
-import { SignalController, SignalEmitter } from "signal-controller";
+import { EventController, EventEmitter } from "@leonardoraele/event-controller";
 import { SignalProducer } from "./SignalProducer";
 
 export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, SignalProducer {
-	private _eventController = new SignalController<{
+	private _eventController = new EventController<{
 		change(): void;
 	}>();
 
@@ -14,7 +14,7 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 		this._eventController?.emit("change");
 	}
 
-	get events(): SignalEmitter<{
+	get events(): EventEmitter<{
 		change(): void;
 	}> {
 		return this._eventController.emitter;

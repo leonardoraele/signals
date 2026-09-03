@@ -1,4 +1,4 @@
-import { SignalController, SignalEmitter } from 'signal-controller';
+import { EventController, EventEmitter } from '@leonardoraele/event-controller';
 import { SignalProducer } from './SignalProducer.js';
 import { searchPropertiesDeep } from './util/property-iterator.js';
 
@@ -27,8 +27,8 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 	}
 	const sources = Object.create(null) as { // TODO Does it makes sense to use `WeakMap` here?
 		[key: PropertyKey]: {
-			controller: SignalController<{ change(): void; }>;
-			events: SignalEmitter<{ change(): void; }>;
+			controller: EventController<{ change(): void; }>;
+			events: EventEmitter<{ change(): void; }>;
 		};
 	};
 	const notifyUsage = (key: PropertyKey) => {
@@ -36,7 +36,7 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 			key = self;
 		}
 		const source = sources[key] ??= (() => {
-			const controller = new SignalController<{ change(): void; }>();
+			const controller = new EventController<{ change(): void; }>();
 			return {
 				_debug: key,
 				controller,

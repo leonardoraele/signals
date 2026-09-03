@@ -1,4 +1,4 @@
-import { SignalController, SignalEmitter } from "signal-controller";
+import { EventController, EventEmitter } from "@leonardoraele/event-controller";
 import { SignalProducer } from "./SignalProducer";
 
 export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalProducer {
@@ -6,11 +6,11 @@ export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalProd
 		super(values);
 	}
 
-	private _eventController = new SignalController<{
+	private _eventController = new EventController<{
 		change(): void;
 	}>()
 
-	get events(): SignalEmitter<{
+	get events(): EventEmitter<{
 		change(): void;
 	}> {
 		return this._eventController.emitter;

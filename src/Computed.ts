@@ -1,4 +1,4 @@
-import { SignalController } from 'signal-controller';
+import { EventController } from '@leonardoraele/event-controller';
 import { SignalProducer } from './SignalProducer.js';
 import { SignalConsumer } from './SignalConsumer.js';
 
@@ -8,7 +8,7 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 	) {}
 
 	#abortController: AbortController|undefined = undefined;
-	#eventsController = new SignalController<{
+	#eventsController = new EventController<{
 		change(): void;
 		dirty(): void;
 		clean(): void;
@@ -32,7 +32,8 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 	forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalProducer>();
-		SignalProducer.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
+		SignalProducer.listen({ signal: controller.signal })
+			.addEventListener('usage', source => dependencies.add(source));
 		try {
 			this.#value = this.callbackfn();
 			this.#dirty = false;
@@ -51,12 +52,12 @@ export class Computed<T = unknown> implements SignalProducer, SignalConsumer {
 		}
 		this.#abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.on('change', { signal: this.#abortController.signal }, () => {
+			dependency.events.addEventListener('change', () => {
 				this.#dirty = true;
 				this.#abortController?.abort();
 				this.#eventsController.emit('change');
 				this.#eventsController.emit('dirty');
-			});
+			}, { signal: this.#abortController.signal });
 		}
 	}
 

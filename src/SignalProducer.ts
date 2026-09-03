@@ -1,21 +1,21 @@
-import { SignalController, SignalEmitter } from 'signal-controller';
+import { EventController, EventEmitter } from '@leonardoraele/event-controller';
 
 export interface SignalProducer {
 	// readonly value: T;
-	readonly events: SignalEmitter<{
+	readonly events: EventEmitter<{
 		change(): void;
 	}>;
 }
 
 export namespace SignalProducer {
-	const controllers: SignalController<{
+	const controllers: EventController<{
 		usage(source: SignalProducer): void;
 	}>[] = [];
 
-	export function listen({ signal = undefined as AbortSignal | undefined } = {}): SignalEmitter<{
+	export function listen({ signal = undefined as AbortSignal | undefined } = {}): EventEmitter<{
 		usage(source: SignalProducer): void;
 	}> {
-		const controller = new SignalController<{
+		const controller = new EventController<{
 			usage(source: SignalProducer): void;
 		}>();
 		controllers.push(controller);

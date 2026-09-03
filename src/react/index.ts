@@ -9,7 +9,7 @@ export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
 		const box = new ReactiveBox<T>(state);
-		box.events.on('change', newValue => setState(newValue));
+		box.events.addEventListener('change', newValue => setState(newValue));
 		return box;
 	}, []);
 }
@@ -24,8 +24,8 @@ export function useReactiveBox<T>(initialValue: T|(() => T)): ReactiveBox<T> {
 export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []): T {
 	const computed = useMemo(() => new Computed(callbackfn), deps);
 	const subscribe = (callback: () => unknown) => {
-		computed.events.on('dirty', callback);
-		return () => computed.events.off('dirty', callback);
+		computed.events.addEventListener('dirty', callback);
+		return () => computed.events.removeEventListener('dirty', callback);
 	};
 	return useSyncExternalStore(subscribe, () => computed.value);
 }
@@ -41,7 +41,7 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []):
 export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): void {
 	const effect = useMemo(() => new Effect(callbackfn, { lazy: true }), deps);
 	useEffect(() => {
-		effect.events.on('dirty', () => queueMicrotask(() => effect.reevaluate()));
+		effect.events.addEventListener('dirty', () => queueMicrotask(() => effect.reevaluate()));
 		return () => effect.dispose();
 	}, [effect]);
 	useEffect(() => void effect.reevaluate());

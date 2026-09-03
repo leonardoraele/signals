@@ -1,4 +1,4 @@
-import { SignalController } from 'signal-controller';
+import { EventController } from '@leonardoraele/event-controller';
 import { SignalProducer } from './SignalProducer.js';
 import { SignalConsumer } from './SignalConsumer.js';
 import { createReadableStreamWithController } from './util/stream.js';
@@ -9,7 +9,7 @@ export interface EffectOptions {
 	 * do not provide an {@link AbortSignal}, you must call {@link Effect.dispose} manually to clean up the effect when
 	 * it is no longer needed, otherwise it will continue to listen for changes in its dependencies indefinitely.
 	 */
-	signal?: AbortSignal | null | undefined;
+	signal?: AbortSignal | undefined;
 
 	/**
 	 * By default, the effect is immediately, and synchronously, executed when it is created. If you set this option to
@@ -78,7 +78,7 @@ export class Effect implements SignalConsumer {
 	static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): Effect {
 		const { controller, stream: scheduler } = createReadableStreamWithController<void>();
 		const effect = new Effect(callbackfn, { ...options, scheduler });
-		effect.events.on('dirty', options?.signal ? { signal: options.signal } : {}, () => controller.enqueue());
+		effect.events.addEventListener('dirty', () => controller.enqueue(), { signal: options?.signal });
 		return effect;
 	}
 
@@ -96,7 +96,7 @@ export class Effect implements SignalConsumer {
 	}
 
 	#dirty = true;
-	#eventsController = new SignalController<{
+	#eventsController = new EventController<{
 		dirty(): void;
 		clean(): void;
 	}>();
@@ -140,7 +140,8 @@ export class Effect implements SignalConsumer {
 	forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalProducer>();
-		SignalProducer.listen({ signal: controller.signal }).on('usage', source => dependencies.add(source));
+		SignalProducer.listen({ signal: controller.signal })
+			.addEventListener('usage', source => dependencies.add(source));
 		try {
 			this.callbackfn();
 		} finally {
@@ -159,13 +160,13 @@ export class Effect implements SignalConsumer {
 		}
 		this.#abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.on('change', { signal: this.#abortController.signal }, () => {
+			dependency.events.addEventListener('change', () => {
 				this.#abortController?.abort();
 				if (!this.dirty) {
 					this.#dirty = true;
 					this.#eventsController.emit('dirty');
 				}
-			});
+			}, { signal: this.#abortController.signal });
 		}
 	}
 
@@ -175,7 +176,7 @@ export class Effect implements SignalConsumer {
 
 	dispose(): void {
 		this.#dirty = false;
-		this.#eventsController.destroy();
+		this.#eventsController.clear();
 		this.#setDependencies([]);
 	}
 }

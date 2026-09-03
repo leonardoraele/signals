@@ -1,4 +1,4 @@
-import { SignalController } from 'signal-controller';
+import { EventController } from '@leonardoraele/event-controller';
 import { SignalProducer } from './SignalProducer.js';
 
 /**
@@ -14,7 +14,7 @@ export class ReactiveBox<T = unknown> implements SignalProducer {
 		this.#value = initialValue;
 	}
 
-	readonly #instanceController = new SignalController<{
+	readonly #instanceController = new EventController<{
 		change(newValue: T, oldValue: T): void;
 	}>();
 	#value: T;
@@ -46,7 +46,7 @@ export class ReactiveBox<T = unknown> implements SignalProducer {
 				await new Promise<T>((_resolve, _reject) => {
 					resolve = _resolve;
 					reject = _reject;
-					this.events.on('change', resolve);
+					this.events.addEventListener('change', resolve);
 					signal.addEventListener('abort', reject);
 				});
 				yield this.value;
@@ -56,7 +56,7 @@ export class ReactiveBox<T = unknown> implements SignalProducer {
 				}
 				throw error;
 			} finally {
-				this.events.off('change', resolve!);
+				this.events.removeEventListener('change', resolve!);
 				signal.removeEventListener('abort', reject!);
 			}
 		}
