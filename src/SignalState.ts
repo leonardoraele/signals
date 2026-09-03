@@ -1,6 +1,8 @@
 import { EventController } from '@leonardoraele/event-controller';
 import { SignalSource } from './SignalSource.js';
 
+const DEFAULT_EQUALITY_COMPARER: EqualityComparer<unknown> = (a, b) => a === b;
+
 /**
  * Represents a mutable variable that holds a value and can be observed when the value is set.
  *
@@ -8,36 +10,34 @@ import { SignalSource } from './SignalSource.js';
  * You can optionally provide a custom equality comparer function to determine whether two values are considered equal.
  */
 export class SignalState<T = unknown> implements SignalSource {
-	static readonly #DEFAULT_EQUALITY_COMPARER: EqualityComparer<unknown> = (a, b) => a === b;
-
-	constructor(initialValue: T, private readonly options?: StateOptions<T>) {
-		this.#value = initialValue;
+	public constructor(initialValue: T, private readonly options?: StateOptions<T>) {
+		this._value = initialValue;
 	}
 
-	readonly #instanceController = new EventController<{
+	private readonly _eventController = new EventController<{
 		change(newValue: T, oldValue: T): void;
 	}>();
-	#value: T;
-	readonly events = this.#instanceController.emitter;
+	private _value: T;
+	public readonly events = this._eventController.emitter;
 
-	get #equalityComparer(): EqualityComparer<T> {
-		return this.options?.equalityComparer ?? SignalState.#DEFAULT_EQUALITY_COMPARER;
+	private get _equalityComparer(): EqualityComparer<T> {
+		return this.options?.equalityComparer ?? DEFAULT_EQUALITY_COMPARER;
 	}
 
-	get value(): T {
+	public get value(): T {
 		SignalSource.notifyUsage(this);
-		return this.#value;
+		return this._value;
 	}
 
-	set value(newValue: T) {
-		if (this.#equalityComparer(this.#value, newValue) === false) {
-			const oldValue = this.#value;
-			this.#value = newValue;
-			this.#instanceController.emit('change', newValue, oldValue);
+	public set value(newValue: T) {
+		if (this._equalityComparer(this._value, newValue) === false) {
+			const oldValue = this._value;
+			this._value = newValue;
+			this._eventController.emit('change', newValue, oldValue);
 		}
 	}
 
-	async *observe(signal: AbortSignal): AsyncGenerator<T> {
+	public async *observe(signal: AbortSignal): AsyncGenerator<T> {
 		yield this.value;
 		while (!signal.aborted) {
 			let resolve: (value: T | PromiseLike<T>) => void;

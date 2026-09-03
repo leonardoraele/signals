@@ -75,14 +75,14 @@ export class SignalEffect implements SignalSink {
 	 * @param options - Optional configuration for the effect.
 	 * @returns The created {@link SignalEffect} instance.
 	 */
-	static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): SignalEffect {
+	public static createImmediate(callbackfn: () => unknown, options?: Omit<EffectOptions, 'scheduler'>): SignalEffect {
 		const { controller, stream: scheduler } = createReadableStreamWithController<void>();
 		const effect = new SignalEffect(callbackfn, { ...options, scheduler });
 		effect.events.addEventListener('dirty', () => controller.enqueue(), { signal: options?.signal });
 		return effect;
 	}
 
-	constructor(private readonly callbackfn: () => unknown, { signal, lazy = false, scheduler }: EffectOptions = {}) {
+	public constructor(private readonly callbackfn: () => unknown, { signal, lazy = false, scheduler }: EffectOptions = {}) {
 		signal?.addEventListener('abort', () => this.dispose());
 		if (!lazy) {
 			this.forceRerun();
@@ -95,13 +95,13 @@ export class SignalEffect implements SignalSink {
 		}
 	}
 
-	#dirty = true;
-	#eventsController = new EventController<{
+	private _dirty = true;
+	private _eventsController = new EventController<{
 		dirty(): void;
 		clean(): void;
 	}>();
-	#abortController: AbortController|undefined = undefined;
-	readonly events = this.#eventsController.emitter;
+	private _abortController: AbortController|undefined = undefined;
+	public readonly events = this._eventsController.emitter;
 
 	/**
 	 * Indicates whether the effect is dirty, meaning that one or more of its dependencies have changed since the last
@@ -109,8 +109,8 @@ export class SignalEffect implements SignalSink {
 	 *
 	 * If the effect is not dirty, it means that it has already been executed and is up to date with its dependencies.
 	 */
-	get dirty(): boolean {
-		return this.#dirty;
+	public get dirty(): boolean {
+		return this._dirty;
 	}
 
 	private async schedule(scheduler: AsyncIterator<unknown>): Promise<void> {
@@ -123,8 +123,8 @@ export class SignalEffect implements SignalSink {
 	 * Reevaluates the effect if it is dirty. If the effect is dirty, the effect is executed synchronously and the
 	 * effect is marked as clean. If the effect is not dirty, nothing happens.
 	 */
-	reevaluate(): void {
-		if (this.#dirty) {
+	public reevaluate(): void {
+		if (this._dirty) {
 			this.forceRerun();
 		}
 	}
@@ -137,7 +137,7 @@ export class SignalEffect implements SignalSink {
 	 *
 	 * @throws {Error} If the effect has been disposed, calling this method will throw an error.
 	 */
-	forceRerun(): void {
+	public forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
 		SignalSource.listen({ signal: controller.signal })
@@ -146,37 +146,37 @@ export class SignalEffect implements SignalSink {
 			this.callbackfn();
 		} finally {
 			controller.abort();
-			this.#dirty = false;
-			this.#setDependencies(Iterator.from(dependencies).toArray());
-			this.#eventsController.emit('clean');
+			this._dirty = false;
+			this._setDependencies(Iterator.from(dependencies).toArray());
+			this._eventsController.emit('clean');
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
-		this.#abortController?.abort();
+	private _setDependencies(dependencies: SignalSource[]) {
+		this._abortController?.abort();
 		if (!dependencies.length) {
-			this.#abortController = undefined;
+			this._abortController = undefined;
 			return;
 		}
-		this.#abortController = new AbortController();
+		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
 			dependency.events.addEventListener('change', () => {
-				this.#abortController?.abort();
+				this._abortController?.abort();
 				if (!this.dirty) {
-					this.#dirty = true;
-					this.#eventsController.emit('dirty');
+					this._dirty = true;
+					this._eventsController.emit('dirty');
 				}
-			}, { signal: this.#abortController.signal });
+			}, { signal: this._abortController.signal });
 		}
 	}
 
-	[Symbol.dispose]() {
+	public [Symbol.dispose]() {
 		this.dispose();
 	}
 
-	dispose(): void {
-		this.#dirty = false;
-		this.#eventsController.clear();
-		this.#setDependencies([]);
+	public dispose(): void {
+		this._dirty = false;
+		this._eventsController.clear();
+		this._setDependencies([]);
 	}
 }

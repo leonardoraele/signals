@@ -3,66 +3,67 @@ import { SignalSource } from './SignalSource.js';
 import { SignalSink } from './SignalSink.js';
 
 export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
-	constructor(
+	public constructor(
 		private readonly callbackfn: () => T,
 	) {}
 
-	#abortController: AbortController|undefined = undefined;
-	#eventsController = new EventController<{
+	private _abortController: AbortController|undefined = undefined;
+	private readonly _eventController = new EventController<{
 		change(): void;
 		dirty(): void;
 		clean(): void;
 	}>();
-	#value: T = undefined as any;
-	#dirty = true;
-	readonly events = this.#eventsController.emitter;
+	private _value: T = undefined as any;
+	private _dirty = true;
+	public readonly events = this._eventController.emitter;
 
-	get value(): T {
-		if (this.#dirty) {
+	public get value(): T {
+		if (this._dirty) {
 			this.forceRerun();
 		}
 		SignalSource.notifyUsage(this);
-		return this.#value;
+		return this._value;
 	}
 
-	get dirty(): boolean {
-		return this.#dirty;
+	public get dirty(): boolean {
+		return this._dirty;
 	}
 
-	forceRerun(): void {
+	public forceRerun(): void {
 		const controller = new AbortController();
 		const dependencies = new Set<SignalSource>();
 		SignalSource.listen({ signal: controller.signal })
 			.addEventListener('usage', source => dependencies.add(source));
 		try {
-			this.#value = this.callbackfn();
-			this.#dirty = false;
-			this.#eventsController.emit('clean');
+			this._value = this.callbackfn();
+			this._dirty = false;
+			this._eventController.emit('clean');
 		} finally {
 			controller.abort();
-			this.#setDependencies(Iterator.from(dependencies).toArray());
+			this._setDependencies(Iterator.from(dependencies).toArray());
 		}
 	}
 
-	#setDependencies(dependencies: SignalSource[]) {
-		this.#abortController?.abort();
+	private _setDependencies(dependencies: SignalSource[]) {
+		this._abortController?.abort();
 		if (!dependencies.length) {
-			this.#abortController = undefined;
+			this._abortController = undefined;
 			return;
 		}
-		this.#abortController = new AbortController();
+		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
 			dependency.events.addEventListener('change', () => {
-				this.#dirty = true;
-				this.#abortController?.abort();
-				this.#eventsController.emit('change');
-				this.#eventsController.emit('dirty');
-			}, { signal: this.#abortController.signal });
+				this._dirty = true;
+				this._abortController?.abort();
+				this._eventController.emit('change');
+				this._eventController.emit('dirty');
+			}, { signal: this._abortController.signal });
 		}
 	}
 
-	dispose(): void {
-		this.#abortController?.abort();
-		this.#eventsController.clear();
+	public dispose(): void {
+		this._abortController?.abort();
+		this._abortController = undefined;
+		this._eventController.clear();
 	}
 }
