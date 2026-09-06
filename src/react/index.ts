@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SignalComputed } from '../SignalComputed.js';
 import { SignalEffect } from '../SignalEffect.js';
 import { SignalState } from '../SignalState.js';
+
+function useManualRerender() {
+	const [, setState] = useState(false);
+	return () => setState(s => !s);
+}
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
 export function useReactiveBox<T>(initialValue: T|(() => T)): SignalState<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
-		const box = new SignalState<T>(state);
-		box.events.addEventListener('change', newValue => setState(newValue));
-		return box;
+		const signal = new SignalState<T>(state);
+		signal.events.addEventListener('change', newValue => setState(newValue));
+		return signal;
 	}, []);
 }
 
@@ -21,13 +26,16 @@ export function useReactiveBox<T>(initialValue: T|(() => T)): SignalState<T> {
  * You can also pass an array of explicit dependencies, as is traditional for react hooks. The computed value is
  * recalculated whenever any of the dependencies change.
  */
-export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []): T {
+export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []): SignalComputed<T> {
+	const rerender = useManualRerender();
 	const computed = useMemo(() => new SignalComputed(callbackfn), deps);
-	const subscribe = (callback: () => unknown) => {
-		computed.events.addEventListener('dirty', callback);
-		return () => computed.events.removeEventListener('dirty', callback);
-	};
-	return useSyncExternalStore(subscribe, () => computed.value);
+
+	useEffect(() => {
+		computed.events.addEventListener('dirty', rerender);
+		return () => computed.dispose();
+	}, [computed]);
+
+	return computed;
 }
 
 /**
