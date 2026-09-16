@@ -13,6 +13,7 @@ export namespace SignalSource {
 	const controllers: EventController<{
 		usage(source: SignalSource): void;
 	}>[] = [];
+	let untrackedCount = 0;
 
 	export function listen({ signal = undefined as AbortSignal | undefined } = {}): EventEmitter<{
 		usage(source: SignalSource): void;
@@ -28,6 +29,20 @@ export namespace SignalSource {
 	}
 
 	export function notifyUsage(source: SignalSource) {
+		if (untrackedCount > 0) {
+			return;
+		}
 		controllers.at(-1)?.emit('usage', source);
 	}
+
+	export function runUntracked<T>(callback: () => T): T {
+		untrackedCount++;
+		try {
+			return callback();
+		} finally {
+			untrackedCount--;
+		}
+	}
 }
+
+export const runUntracked = SignalSource.runUntracked;

@@ -5,3 +5,4 @@ export * from './ReactiveArray.js';
 export * from './SignalState.js';
 export * from './ReactiveMap.js';
 export * from './ReactiveSet.js';
+export { runUntracked } from './SignalSource.js';
