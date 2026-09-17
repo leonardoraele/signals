@@ -6,3 +6,4 @@ export * from './SignalState.js';
 export * from './ReactiveMap.js';
 export * from './ReactiveSet.js';
 export * from './SignalController.js';
+export * from './SignalPrimitive.js';

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SignalComputed } from '../SignalComputed.js';
 import { SignalEffect } from '../SignalEffect.js';
 import { SignalState } from '../SignalState.js';
+import { SignalController } from '../SignalController.js';
+import { SignalPrimitive } from '../SignalPrimitive.js';
 
 function useManualRerender() {
 	const [, setState] = useState(false);
@@ -10,7 +12,7 @@ function useManualRerender() {
 
 /** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
  * signals instead. */
-export function useReactiveBox<T>(initialValue: T|(() => T)): SignalState<T> {
+export function useSignalState<T>(initialValue: T|(() => T)): SignalState<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
 		const signal = new SignalState<T>(state);
@@ -53,4 +55,55 @@ export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): v
 		return () => effect.dispose();
 	}, [effect]);
 	useEffect(() => void effect.reevaluate());
+}
+
+export class SignalObservationToken {
+	public constructor(
+		private readonly callback: () => void,
+	) {}
+
+	public mount<T>(target: T): asserts target is T & Disposable {
+		const original = (target as any)[Symbol.dispose];
+		(target as any)[Symbol.dispose] = (...args: any[]) => {
+			original?.apply(target, args);
+			this[Symbol.dispose]();
+			(target as any)[Symbol.dispose] = original;
+		};
+	}
+
+	public [Symbol.dispose](): void {
+		this.callback();
+	}
+}
+
+/**
+ * This function observes changes on signals and triggers a rerender whenever a signal changes.
+ * @param signal
+ */
+export function useSignalObserver(): SignalObservationToken {
+	const rerender = useManualRerender();
+	const aborter = useRef<AbortController | null>(null);
+
+	aborter.current ??= new AbortController();
+
+	useEffect(() => {
+		return () => {
+			aborter.current?.abort();
+			aborter.current = null;
+		};
+	});
+
+	function onSignalUsed(primitive: SignalPrimitive) {
+		primitive.addEventListener('change', () => {
+			rerender();
+			aborter.current?.abort();
+			aborter.current = null;
+		}, { signal: aborter.current?.signal });
+	}
+
+	SignalController.observe(onSignalUsed);
+
+	return new SignalObservationToken(() => {
+		SignalController.unobserve(onSignalUsed);
+	});
 }

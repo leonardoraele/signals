@@ -10,8 +10,8 @@ This is intended for apps not based on frontend frameworks that still want to us
 
 - **Transparent Effect Scheduling**: You decide when effects run, which can be immediately, or later.
 - **Lazy Computed States.** Computed states are evaluated only when needed.
-<!-- - **Lightweight**: Minimal overhead with a focus on performance. -->
 - **Supports `AbortSignal`.** It can be used to dispose of effects.
+- **Nested Effects.** Create effects within other effects.
 - **TypeScript Support**: Fully typed.
 
 ## Installation
