@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react';
 import { useSignalState, useSignalComputed, useSignalEffect } from './index.js';
 import { type ReactNode } from 'react';
 import { SignalState } from '../SignalState.js';
+import * as React from 'react';
 
 describe('React Signal Hooks', () => {
 	beforeEach(() => {
