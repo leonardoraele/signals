@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SignalComputed } from '../SignalComputed.js';
 import { SignalEffect } from '../SignalEffect.js';
 import { SignalState } from '../SignalState.js';
