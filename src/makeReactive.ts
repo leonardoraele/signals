@@ -1,5 +1,5 @@
 import { EventController, EventEmitter } from '@leonardoraele/event-controller';
-import { SignalSource } from './SignalSource.js';
+import { SignalController } from './SignalController.js';
 import { searchPropertiesDeep } from './util/property-iterator.js';
 
 const PROXY_ESCAPE_SYMBOL = Symbol('observable');
@@ -43,7 +43,7 @@ export function makeReactive<T extends object>(subject: T, { deep = false, atomi
 				events: controller.emitter,
 			};
 		})();
-		SignalSource.notifyUsage(source);
+		SignalController.notifyUsage(source.events);
 	};
 	const notifyChange = (key: PropertyKey) => {
 		if (atomic) {

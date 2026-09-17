@@ -1,7 +1,7 @@
 import { EventController, EventEmitter } from "@leonardoraele/event-controller";
-import { SignalSource } from "./SignalSource";
+import { SignalController } from "./SignalController";
 
-export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalSource {
+export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T> {
 	constructor(values?: Iterable<T>) {
 		super(values);
 	}
@@ -17,7 +17,7 @@ export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalSour
 	}
 
 	override get size(): number {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.size;
 	}
 
@@ -33,74 +33,74 @@ export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T>, SignalSour
 	}
 
 	override delete(value: T): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		const result = super.delete(value);
 		this._eventController?.emit('change');
 		return result;
 	}
 
 	override forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		super.forEach(callbackfn, thisArg);
 	}
 
 	override has(value: T): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.has(value);
 	}
 
 	override entries(): SetIterator<[T, T]> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.entries();
 	}
 
 	override keys(): SetIterator<T> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.keys();
 	}
 
 	override values(): SetIterator<T> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.values();
 	}
 
 	override union<U>(other: ReadonlySetLike<U>): Set<T | U> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.union(other);
 	}
 
 	override intersection<U>(other: ReadonlySetLike<U>): Set<T & U> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.intersection(other);
 	}
 
 	override difference<U>(other: ReadonlySetLike<U>): Set<T> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.difference(other);
 	}
 
 	override symmetricDifference<U>(other: ReadonlySetLike<U>): Set<T | U> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.symmetricDifference(other);
 	}
 
 	override isSubsetOf(other: ReadonlySetLike<unknown>): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.isSubsetOf(other);
 	}
 
 	override isSupersetOf(other: ReadonlySetLike<unknown>): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.isSupersetOf(other);
 	}
 
 	override isDisjointFrom(other: ReadonlySetLike<unknown>): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.isDisjointFrom(other);
 	}
 
 	override [Symbol.iterator](): SetIterator<T> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super[Symbol.iterator]();
 	}
 

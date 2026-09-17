@@ -1,5 +1,5 @@
 import { EventController } from '@leonardoraele/event-controller';
-import { SignalSource } from './SignalSource.js';
+import { SignalController } from './SignalController.js';
 
 const DEFAULT_EQUALITY_COMPARER: EqualityComparer<unknown> = (a, b) => a === b;
 
@@ -9,7 +9,7 @@ const DEFAULT_EQUALITY_COMPARER: EqualityComparer<unknown> = (a, b) => a === b;
  * It only emits `change` events if the value is set to a new value that is different from the current value in the box.
  * You can optionally provide a custom equality comparer function to determine whether two values are considered equal.
  */
-export class SignalState<T = unknown> implements SignalSource {
+export class SignalState<T = unknown> {
 	public constructor(initialValue: T, private readonly options?: StateOptions<T>) {
 		this._value = initialValue;
 	}
@@ -25,7 +25,7 @@ export class SignalState<T = unknown> implements SignalSource {
 	}
 
 	public get value(): T {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return this._value;
 	}
 

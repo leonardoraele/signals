@@ -1,7 +1,7 @@
 import { EventController } from '@leonardoraele/event-controller';
-import { SignalSource } from './SignalSource.js';
-import { SignalSink } from './SignalSink.js';
+import { SignalController } from './SignalController.js';
 import { createReadableStreamWithController } from './util/stream.js';
+import { SignalPrimitive } from './SignalPrimitive.js';
 
 export interface EffectOptions {
 	/**
@@ -61,7 +61,7 @@ export interface EffectOptions {
  * to listen for changes in its dependencies indefinitely. You can also provide an {@link AbortSignal} when you create
  * the effect, and the effect will be automatically disposed when the signal is triggered.
  */
-export class SignalEffect implements SignalSink {
+export class SignalEffect {
 	/**
 	 * Creates an {@link SignalEffect} that is executed immediately whenever any of its dependencies change.
 	 *
@@ -138,21 +138,20 @@ export class SignalEffect implements SignalSink {
 	 * @throws {Error} If the effect has been disposed, calling this method will throw an error.
 	 */
 	public forceRerun(): void {
-		const controller = new AbortController();
-		const dependencies = new Set<SignalSource>();
-		SignalSource.listen({ signal: controller.signal })
-			.addEventListener('usage', source => dependencies.add(source));
+		const dependencies = new Set<SignalPrimitive>();
 		try {
+			SignalController.pushScope();
+			SignalController.observe((primitive: SignalPrimitive) => dependencies.add(primitive));
 			this.callbackfn();
 		} finally {
-			controller.abort();
+			SignalController.popScope();
 			this._dirty = false;
 			this._setDependencies(Iterator.from(dependencies).toArray());
 			this._eventsController.emit('clean');
 		}
 	}
 
-	private _setDependencies(dependencies: SignalSource[]) {
+	private _setDependencies(dependencies: SignalPrimitive[]) {
 		this._abortController?.abort();
 		if (!dependencies.length) {
 			this._abortController = undefined;
@@ -160,7 +159,7 @@ export class SignalEffect implements SignalSink {
 		}
 		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.addEventListener('change', () => {
+			dependency.addEventListener('change', () => {
 				this._abortController?.abort();
 				if (!this.dirty) {
 					this._dirty = true;

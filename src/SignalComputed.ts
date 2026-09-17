@@ -1,8 +1,8 @@
 import { EventController } from '@leonardoraele/event-controller';
-import { SignalSource } from './SignalSource.js';
-import { SignalSink } from './SignalSink.js';
+import { SignalController } from './SignalController.js';
+import { SignalPrimitive } from './SignalPrimitive.js';
 
-export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
+export class SignalComputed<T = unknown> {
 	public constructor(
 		private readonly callbackfn: () => T,
 	) {}
@@ -21,7 +21,7 @@ export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
 		if (this._dirty) {
 			this.forceRerun();
 		}
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return this._value;
 	}
 
@@ -30,21 +30,20 @@ export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
 	}
 
 	public forceRerun(): void {
-		const controller = new AbortController();
-		const dependencies = new Set<SignalSource>();
-		SignalSource.listen({ signal: controller.signal })
-			.addEventListener('usage', source => dependencies.add(source));
+		const dependencies = new Set<SignalPrimitive>();
+		SignalController.pushScope();
+		SignalController.observe(source => dependencies.add(source));
 		try {
 			this._value = this.callbackfn();
 			this._dirty = false;
 			this._eventController.emit('clean');
 		} finally {
-			controller.abort();
+			SignalController.popScope();
 			this._setDependencies(Iterator.from(dependencies).toArray());
 		}
 	}
 
-	private _setDependencies(dependencies: SignalSource[]) {
+	private _setDependencies(dependencies: SignalPrimitive[]) {
 		this._abortController?.abort();
 		if (!dependencies.length) {
 			this._abortController = undefined;
@@ -52,7 +51,7 @@ export class SignalComputed<T = unknown> implements SignalSource, SignalSink {
 		}
 		this._abortController = new AbortController();
 		for (const dependency of dependencies) {
-			dependency.events.addEventListener('change', () => {
+			dependency.addEventListener('change', () => {
 				this._dirty = true;
 				this._abortController?.abort();
 				this._eventController.emit('change');

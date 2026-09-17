@@ -1,7 +1,7 @@
 import { EventController, EventEmitter } from "@leonardoraele/event-controller";
-import { SignalSource } from "./SignalSource";
+import { SignalController } from "./SignalController";
 
-export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, SignalSource {
+export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V> {
 	public constructor(entries?: Iterable<readonly [K, V]>) {
 		super(entries);
 	}
@@ -22,7 +22,7 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 
 	public override get size(): number {
 		const result = super.size;
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return result;
 	}
 
@@ -32,24 +32,24 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 	}
 
 	public override delete(key: K): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		const result = super.delete(key);
 		this.notifyChange();
 		return result;
 	}
 
 	public override forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		super.forEach(callbackfn, thisArg);
 	}
 
 	public override get(key: K): V | undefined {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.get(key);
 	}
 
 	public override has(key: K): boolean {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.has(key);
 	}
 
@@ -60,22 +60,22 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 	}
 
 	public override entries(): MapIterator<[K, V]> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.entries();
 	}
 
 	public override keys(): MapIterator<K> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.keys();
 	}
 
 	public override values(): MapIterator<V> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super.values();
 	}
 
 	public override getOrInsert(key: K, defaultValue: V): V {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		if (super.has(key)) {
 			return super.get(key)!;
 		}
@@ -85,7 +85,7 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 	}
 
 	public override getOrInsertComputed(key: K, callback: (key: K) => V): V {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		if (super.has(key)) {
 			return super.get(key)!;
 		}
@@ -96,7 +96,7 @@ export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V>, S
 	}
 
 	public override [Symbol.iterator](): MapIterator<[K, V]> {
-		SignalSource.notifyUsage(this);
+		SignalController.notifyUsage(this.events);
 		return super[Symbol.iterator]();
 	}
 
