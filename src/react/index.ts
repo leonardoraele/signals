@@ -66,13 +66,17 @@ export class SignalObservationToken {
 		const original = (target as any)[Symbol.dispose];
 		(target as any)[Symbol.dispose] = (...args: any[]) => {
 			original?.apply(target, args);
-			this[Symbol.dispose]();
 			(target as any)[Symbol.dispose] = original;
+			this.stop();
 		};
 	}
 
-	public [Symbol.dispose](): void {
+	public stop(): void {
 		this.callback();
+	}
+
+	public [Symbol.dispose](): void {
+		this.stop();
 	}
 }
 
@@ -80,30 +84,30 @@ export class SignalObservationToken {
  * This function observes changes on signals and triggers a rerender whenever a signal changes.
  * @param signal
  */
-export function useSignalObserver(): SignalObservationToken {
+export function useSignalObserverToken(): SignalObservationToken {
 	const rerender = useManualRerender();
-	const aborter = useRef<AbortController | null>(null);
-
-	aborter.current ??= new AbortController();
+	const aborter = new AbortController();
 
 	useEffect(() => {
 		return () => {
-			aborter.current?.abort();
-			aborter.current = null;
+			if (!aborter.signal.aborted) {
+				aborter.abort();
+			}
 		};
 	});
 
 	function onSignalUsed(primitive: SignalPrimitive) {
 		primitive.addEventListener('change', () => {
 			rerender();
-			aborter.current?.abort();
-			aborter.current = null;
-		}, { signal: aborter.current?.signal });
+			aborter.abort();
+		}, { signal: aborter.signal });
 	}
 
+	SignalController.pushScope();
 	SignalController.observe(onSignalUsed);
 
 	return new SignalObservationToken(() => {
 		SignalController.unobserve(onSignalUsed);
+		SignalController.popScope();
 	});
 }
