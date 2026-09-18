@@ -128,12 +128,19 @@ export function useSignalObserverToken(): DisposableToken {
  *
  * Note that you cannot simply call `useSignalObserverToken()` inside of your store's hook functions because the token
  * must be assigned to a `using` variable in the component's body.
+ *
+ * Because this method returns a new object with the original as prototype, then writes to it will be stored on the new
+ * object, leaving the original object unchanged. This is why the function returns a `Readonly` version of the store.
+ * This is fine because the store's mutable properties must all be readonly SignalState types anyway.
  */
-export function useDisposableStore<T extends object>(store: T): T & Disposable;
-export function useDisposableStore<T extends object>(store: T | null): T & Disposable | null;
-export function useDisposableStore<T extends object>(store: T | undefined): T & Disposable | undefined;
-export function useDisposableStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined;
-export function useDisposableStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined {
+export function useSignalStore<T extends object>(store: T): Readonly<T> & Disposable;
+export function useSignalStore<T extends object>(store: T | null): Readonly<T> & Disposable | null;
+export function useSignalStore<T extends object>(store: T | undefined): Readonly<T> & Disposable | undefined;
+export function useSignalStore<T extends object>(store: T | null | undefined):
+	Readonly<T> & Disposable | null | undefined;
+export function useSignalStore<T extends object>(store: T | null | undefined):
+	Readonly<T> & Disposable | null | undefined
+{
 	// Must call this hook even if the store is null or undefined, because of react hook rules.
 	const token = useSignalObserverToken();
 	if (!store) {
@@ -151,4 +158,32 @@ export function useDisposableStore<T extends object>(store: T | null | undefined
 			writable: true,
 		}
 	});
+}
+
+
+export function useMutableSignalStore<T extends object>(store: T): T & Disposable;
+export function useMutableSignalStore<T extends object>(store: T | null): T & Disposable | null;
+export function useMutableSignalStore<T extends object>(store: T | undefined): T & Disposable | undefined;
+export function useMutableSignalStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined;
+export function useMutableSignalStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined
+{
+	const token = useSignalObserverToken();
+	if (!store) {
+		token[Symbol.dispose]();
+		return store;
+	}
+
+	function dispose(this: T, ...args: any[]) {
+		token[Symbol.dispose]();
+		(store as any)[Symbol.dispose]?.apply(this, args);
+	}
+
+	return new Proxy<T>(store, {
+		get(target, p, receiver) {
+			if (p === Symbol.dispose) {
+				return dispose;
+			}
+			return Reflect.get(target, p, receiver);
+		},
+	}) as T & Disposable;
 }
