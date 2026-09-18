@@ -57,26 +57,13 @@ export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): v
 	useEffect(() => void effect.reevaluate());
 }
 
-export class SignalObservationToken {
+export class DisposableToken {
 	public constructor(
 		private readonly callback: () => void,
 	) {}
 
-	public mount<T>(target: T): asserts target is T & Disposable {
-		const original = (target as any)[Symbol.dispose];
-		(target as any)[Symbol.dispose] = (...args: any[]) => {
-			original?.apply(target, args);
-			(target as any)[Symbol.dispose] = original;
-			this.stop();
-		};
-	}
-
-	public stop(): void {
-		this.callback();
-	}
-
 	public [Symbol.dispose](): void {
-		this.stop();
+		this.callback();
 	}
 }
 
@@ -84,7 +71,7 @@ export class SignalObservationToken {
  * This function observes changes on signals and triggers a rerender whenever a signal changes.
  * @param signal
  */
-export function useSignalObserverToken(): SignalObservationToken {
+export function useSignalObserverToken(): DisposableToken {
 	const rerender = useManualRerender();
 	const aborter = new AbortController();
 
@@ -106,8 +93,25 @@ export function useSignalObserverToken(): SignalObservationToken {
 	SignalController.pushScope();
 	SignalController.observe(onSignalUsed);
 
-	return new SignalObservationToken(() => {
+	function onDispose() {
 		SignalController.unobserve(onSignalUsed);
 		SignalController.popScope();
+	}
+
+	return new DisposableToken(onDispose);
+}
+
+export function useDisposableStore<T extends object>(store: T): T & Disposable {
+	const token = useSignalObserverToken();
+	return Object.create(store, {
+		[Symbol.dispose]: {
+			configurable: true,
+			enumerable: false,
+			value() {
+				token[Symbol.dispose]();
+				super[Symbol.dispose]?.();
+			},
+			writable: true,
+		}
 	});
 }

@@ -1,7 +1,7 @@
 import 'global-jsdom/register';
 import { describe, expect, it } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/react';
-import { useSignalState, useSignalComputed, useSignalEffect, useSignalObserverToken } from './index.js';
+import { useSignalState, useSignalComputed, useSignalEffect, useSignalObserverToken, useDisposableStore } from './index.js';
 import { type ReactNode } from 'react';
 import { SignalState } from '../SignalState.js';
 import * as React from 'react';
@@ -136,6 +136,36 @@ describe('React Signal Hooks', () => {
 			expect(renderCount).toBe(2);
 
 			signal.value++;
+
+			await waitFor(() => expect(getByTestId('value').textContent).toBe('2'));
+			expect(renderCount).toBe(3);
+		});
+	});
+
+	describe(useDisposableStore.name, () => {
+		it('mounts a store with a disposable token', async () => {
+			const store = {
+				data: new SignalState(0),
+			};
+			let renderCount = 0;
+
+			function TestComponent(): ReactNode {
+				using storeWithToken = useDisposableStore(store);
+				renderCount += 1;
+				return <span data-testid="value">{storeWithToken.data.value}</span>;
+			}
+
+			const { getByTestId } = render(<TestComponent />);
+
+			expect(getByTestId('value').textContent).toBe('0');
+			expect(renderCount).toBe(1);
+
+			store.data.value++;
+
+			await waitFor(() => expect(getByTestId('value').textContent).toBe('1'));
+			expect(renderCount).toBe(2);
+
+			store.data.value++;
 
 			await waitFor(() => expect(getByTestId('value').textContent).toBe('2'));
 			expect(renderCount).toBe(3);
