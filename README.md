@@ -3,9 +3,9 @@
 [![Static Badge](https://img.shields.io/badge/github-gray?logo=github)
 ](https://github.com/leonardoraele/signals)
 [![NPM Version](https://img.shields.io/npm/v/%40leonardoraele%2Fsignals)
-](https://www.npmjs.com/package/signals)
+](https://www.npmjs.com/package/@leonardoraele/signals)
 [![GitHub License](https://img.shields.io/github/license/leonardoraele/signals)](./LICENSE.txt)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/signals)](https://bundlephobia.com/package/signals)
+[![npm bundle size](https://img.shields.io/bundlephobia/minzip/signals)](https://bundlephobia.com/package/@leonardoraele/signals)
 
 My own implementation of JavaScript signals, with transparent effect scheduling.
 
