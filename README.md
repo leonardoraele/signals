@@ -22,9 +22,9 @@ npm install @leonardoraele/signals
 
 ## Usage
 
-### State
+### `SignalState`
 
-A State is a wrapper over a value, and it emites events when the value changes.
+A `SignalState` is a wrapper around a mutable value, and it emits events whenever the value changes.
 
 ```js
 import { SignalState } from '@leonardoraele/signals';
@@ -40,9 +40,9 @@ state.events.on('change', (newValue, oldValue) => {
 state.value = 2; // { newValue: 2, oldValue: 1 }
 ```
 
-### Computed States
+### `SignalComputed`
 
-Create computed states by combining one or more other states. Computed states are automatically updated when their dependencies change. The function runs lazily, only when the `value` property is accessed.
+A computed signal, defined by a function. It keeps track of the signals used within the expression and automatically updates its value when any of those signals change. Computed signals are lazy, the function is only executed when the its `value` property is accessed.
 
 ```js
 import { SignalState, SignalComputed } from '@leonardoraele/signals';
@@ -57,7 +57,7 @@ state.value = 3;
 console.log(computed.value); // 6
 ```
 
-You can also create computed states that depend on other computed states.
+You can also create computed signals that depend on other computed signals:
 
 ```js
 const state = new SignalState(2);
@@ -65,37 +65,59 @@ const double = new SignalComputed(() => state.value * 2);
 const textValue = new SignalComputed(() => String(double.value));
 ```
 
-### Effects
+### `SignalEffect`
 
-Effects are functions that automatically track change of the values they depend on. When the value of a dependency changes, it is said that the effect becomes *dirty*.
+Effects are functions that automatically keep track of the signals it uses. When those signals change, the effect becomes *dirty*, meaning it should be re-evaluated. You can control when the effect runs by manually calling `effect.reevaluate()`, or have it be called immediately (but asynchronously) when it becomes dirty.
+
+Immediate effect:
+
+```js
+const message = new State('Signals are cool');
+
+// Create an effect that reruns immediately after the message changes, asynchronously.
+const effect = SignalEffect.createImmediate(() => console.log(message.value));
+
+// ...later, call `effect.dispose()` to destroy the effect object,
+// freeing resources and stopping it from responding to signal changes.
+effect.dispose();
+```
+
+Manual effect scheduling:
 
 ```js
 import { SignalState, SignalEffect } from '@leonardoraele/signals';
 
 const message = new SignalState('Signals are cool');
-const effect = new SignalEffect(() => console.log(message.value)); // Prints the message immediately
+const effect = new SignalEffect(() => console.log(message.value));
 
-// Later on, call `effect.reevaluate()` and the effect function will rerun
-// only if the effect is dirty.
+// Changing the depending signal makes the effect become dirty,
+// but it won't run immediately.
+message.value = 'Signals are awesome';
 
-effect.reevaluate(); // Prints the current value of `message`, if it has changed.
+// Reevaluates the effect. It will run now, synchronously, if it is dirty.
+effect.reevaluate(); // Effect runs
 
-// Alternativelly, you can listen to `dirty` updates to be notified when
-// dependencies change:
+// You can call `effect.reevaluate()` multiple times. The effect will only be rerun if it is dirty.
+// At this point, the effect is not dirty anymore, so calling `effect.reevaluate()` will not run it.
+effect.reevaluate(); // Effect not run
 
-effect.events.on('dirty', () => console.log(message.value)); // Prints the new message immediately when it changes.
-```
+// You can also make multiple changes to the depending signals before reevaluating the effect.
+// The effect will only run when `effect.reevaluate()` is called.
+message.value = 'Signals are fantastic';
+message.value = 'Signals are incredible';
+message.value = 'Signals are extraordinary';
 
-Alternatively, if you want the effect to run immediately, you can use the `SignalEffect.createImmediate` function:
+effect.reevaluate(); // Effect runs
 
-```js
-const message = new State('Signals are cool');
-SignalEffect.createImmediate(() => console.log(message.value)); // Reruns whenever the message changes, asynchronously.
+// Output:
+// Signals are cool
+// Signals are awesome
+// Signals are extraordinary
 ```
 
 ## API Reference
 
-TBD (for now, refer to the `*.d.ts` typing files)
+TBD (for now, refer to the `*.d.ts` and `*.test.ts` files)
 
 ## License
 
