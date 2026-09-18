@@ -10,8 +10,12 @@ function useManualRerender() {
 	return () => setState(s => !s);
 }
 
-/** Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
- * signals instead. */
+/**
+ * Creates a signal, and rerenders the component whenever the signal changes. This is just like `useState`, but using
+ * signals instead.
+ *
+ * @deprecated
+ */
 export function useSignalState<T>(initialValue: T|(() => T)): SignalState<T> {
 	const [state, setState] = useState<T>(initialValue);
 	return useMemo(() => {
@@ -27,6 +31,8 @@ export function useSignalState<T>(initialValue: T|(() => T)): SignalState<T> {
  *
  * You can also pass an array of explicit dependencies, as is traditional for react hooks. The computed value is
  * recalculated whenever any of the dependencies change.
+ *
+ * @deprecated
  */
 export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []): SignalComputed<T> {
 	const rerender = useManualRerender();
@@ -47,6 +53,8 @@ export function useSignalComputed<T>(callbackfn: () => T, deps: unknown[] = []):
  *
  * This hook also accepts an array of explicit dependencies, as is traditional for react hooks. If one of the
  * dependencies changes after a rerender, the effect is re-evaluated.
+ *
+ * @deprecated
  */
 export function useSignalEffect(callbackfn: () => void, deps: unknown[] = []): void {
 	const effect = useMemo(() => new SignalEffect(callbackfn, { lazy: true }), deps);
@@ -68,7 +76,12 @@ export class DisposableToken {
 }
 
 /**
- * This function observes changes on signals and triggers a rerender whenever a signal changes.
+ * This hook tracks signals used during the component's render phase, and rerenders the component if any of those
+ * signals change later.
+ *
+ * Note that the returned token is a disposable object. It **MUST** be assigned to a `using` variable in the body of the
+ * component to prevent memory leaks and errors caused when signals change after the component unmounts.
+ *
  * @param signal
  */
 export function useSignalObserverToken(): DisposableToken {
@@ -101,8 +114,32 @@ export function useSignalObserverToken(): DisposableToken {
 	return new DisposableToken(onDispose);
 }
 
-export function useDisposableStore<T extends object>(store: T): T & Disposable {
+/**
+ * This hook tracks signals used during the component's render phase, and rerenders the component if any of those
+ * signals change later. It returns a disposable proxy-like wrapper of the store, which **MUST** be assigned to a
+ * `using` variable in the component body.
+ *
+ * @remarks
+ *
+ * This hook works just like `useSignalObserverToken()`, but instead of returning a token, it wraps the provided object
+ * into a disposable proxy-like object that behaves just like the token when it disposes. It is intended to be used
+ * inside of your stores' hook functions to ensure that the disposable token is properly managed; so that you don't need
+ * to manually call `useSignalObserverToken()` in every component.
+ *
+ * Note that you cannot simply call `useSignalObserverToken()` inside of your store's hook functions because the token
+ * must be assigned to a `using` variable in the component's body.
+ */
+export function useDisposableStore<T extends object>(store: T): T & Disposable;
+export function useDisposableStore<T extends object>(store: T | null): T & Disposable | null;
+export function useDisposableStore<T extends object>(store: T | undefined): T & Disposable | undefined;
+export function useDisposableStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined;
+export function useDisposableStore<T extends object>(store: T | null | undefined): T & Disposable | null | undefined {
+	// Must call this hook even if the store is null or undefined, because of react hook rules.
 	const token = useSignalObserverToken();
+	if (!store) {
+		token[Symbol.dispose]();
+		return store;
+	}
 	return Object.create(store, {
 		[Symbol.dispose]: {
 			configurable: true,
