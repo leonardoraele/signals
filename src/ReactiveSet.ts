@@ -1,5 +1,5 @@
-import { EventController, EventEmitter } from "@leonardoraele/event-controller";
-import { SignalController } from "./SignalController";
+import { EventController, EventEmitter } from '@leonardoraele/event-controller';
+import { SignalController } from './SignalController.js';
 
 export class ReactiveSet<T> extends Set<T> implements ReadonlySet<T> {
 	constructor(values?: Iterable<T>) {

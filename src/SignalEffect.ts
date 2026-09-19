@@ -1,7 +1,7 @@
 import { EventController } from '@leonardoraele/event-controller';
 import { SignalController } from './SignalController.js';
 import { createReadableStreamWithController } from './util/stream.js';
-import { SignalPrimitive } from './SignalPrimitive.js';
+import type { SignalPrimitive } from './SignalPrimitive.js';
 
 export interface EffectOptions {
 	/**

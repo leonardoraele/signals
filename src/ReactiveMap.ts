@@ -1,5 +1,5 @@
-import { EventController, EventEmitter } from "@leonardoraele/event-controller";
-import { SignalController } from "./SignalController";
+import { EventController, EventEmitter } from '@leonardoraele/event-controller';
+import { SignalController } from './SignalController.js';
 
 export class ReactiveMap<K, V> extends Map<K, V> implements ReadonlyMap<K, V> {
 	public constructor(entries?: Iterable<readonly [K, V]>) {

@@ -1,4 +1,4 @@
-import { SignalPrimitive } from './SignalPrimitive';
+import type { SignalPrimitive } from './SignalPrimitive.js';
 
 export interface ObserverCallback {
 	(source: SignalPrimitive): void;

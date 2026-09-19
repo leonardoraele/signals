@@ -1,6 +1,6 @@
 import { EventController } from '@leonardoraele/event-controller';
 import { SignalController } from './SignalController.js';
-import { SignalPrimitive } from './SignalPrimitive.js';
+import type { SignalPrimitive } from './SignalPrimitive.js';
 
 export class SignalComputed<T = unknown> {
 	public constructor(
