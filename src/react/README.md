@@ -16,5 +16,6 @@ And signal-based solutions:
 - MobX
 - Valtio
 - Signalium
+- Legend-State
 
 -->
