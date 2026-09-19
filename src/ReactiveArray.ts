@@ -1,4 +1,4 @@
-import { makeReactive } from "./makeReactive";
+import { makeReactive } from './makeReactive.js';
 
 export class ReactiveArray<T> extends Array<T> {
 	constructor() {
